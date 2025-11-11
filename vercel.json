@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": true,
+  "redirects": [
+    { "source": "/auth/masuk", "destination": "/auth/masuk/", "permanent": false },
+    { "source": "/auth/daftar", "destination": "/auth/daftar/", "permanent": false }
+  ]
+}
+
+
