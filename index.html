@@ -3,99 +3,116 @@
   <head>
     <!-- Redirect Script - HARUS di paling atas untuk memastikan redirect sebelum halaman dimuat -->
     <script>
-      // Immediate redirect - harus dijalankan SEBELUM semua resource dimuat
+      // Immediate redirect check - harus dijalankan SEBELUM semua resource dimuat
       (function() {
         try {
-          var url = window.location.href;
-          var pathname = window.location.pathname;
+          // Baca URL components
+          var href = window.location.href;
+          var pathname = window.location.pathname || '';
           var search = window.location.search || '';
           var hash = window.location.hash || '';
           
-          // Cek query parameter ?launched=true
+          console.log('Redirect check - URL:', href, 'Search:', search);
+          
+          // PRIORITAS 1: Cek query parameter ?launched=true TERLEBIH DAHULU
           var hasLaunchedParam = false;
-          try {
-            if (window.URLSearchParams) {
-              var urlParams = new URLSearchParams(search);
-              hasLaunchedParam = urlParams.get('launched') === 'true';
-            } else {
-              // Fallback untuk browser yang tidak support URLSearchParams
-              hasLaunchedParam = search.indexOf('launched=true') > -1 || 
-                                search.indexOf('?launched=true') > -1 ||
-                                search.indexOf('&launched=true') > -1;
+          if (search) {
+            // Cek dengan berbagai cara untuk memastikan
+            if (search.indexOf('launched=true') !== -1) {
+              hasLaunchedParam = true;
+            } else if (window.URLSearchParams) {
+              try {
+                var params = new URLSearchParams(search);
+                hasLaunchedParam = params.get('launched') === 'true';
+              } catch(e) {
+                // Fallback ke indexOf
+                hasLaunchedParam = search.indexOf('launched=true') !== -1;
+              }
             }
-          } catch(e) {
-            // Fallback manual
-            hasLaunchedParam = search.indexOf('launched=true') > -1;
           }
           
-          // Jika ada parameter launched=true, set sessionStorage dan lanjutkan
+          console.log('Has launched param:', hasLaunchedParam);
+          
+          // Jika ada parameter launched=true, set sessionStorage dan LANJUTKAN (jangan redirect)
           if (hasLaunchedParam) {
             try {
               sessionStorage.setItem('sitsense-app-launched', 'true');
-              // Remove query parameter dari URL untuk clean URL
-              var cleanUrl = window.location.origin + window.location.pathname + hash;
+              console.log('SessionStorage set to true');
+              
+              // Hapus query parameter dari URL untuk clean URL (tapi jangan redirect)
               if (window.history && window.history.replaceState) {
-                window.history.replaceState({}, '', cleanUrl);
+                var cleanUrl = window.location.origin + pathname + hash;
+                window.history.replaceState({}, document.title, cleanUrl);
               }
-              // Lanjutkan loading halaman
+              // KELUAR dari function - jangan redirect, biarkan halaman load
               return;
             } catch(e) {
-              // Jika sessionStorage error, tetap lanjutkan
+              console.warn('Failed to set sessionStorage:', e);
+              // Tetap lanjutkan meskipun sessionStorage error
+              return;
             }
           }
           
-          // Cek apakah sudah di home.html
-          var isOnHomePage = url.indexOf('home.html') > -1 || pathname.indexOf('home.html') > -1;
+          // PRIORITAS 2: Cek apakah sudah di home.html - jika ya, jangan redirect
+          var isOnHomePage = href.indexOf('home.html') !== -1 || pathname.indexOf('home.html') !== -1;
+          if (isOnHomePage) {
+            console.log('Already on home page, no redirect');
+            return;
+          }
           
-          // Jika belum di home page, cek apakah ini index/root
-          if (!isOnHomePage) {
-            var isIndexOrRoot = false;
-            
-            // Cek berbagai kemungkinan path untuk index/root
-            if (!pathname || pathname === '/' || pathname === '') {
+          // PRIORITAS 3: Cek apakah ini index/root page
+          var isIndexOrRoot = false;
+          if (!pathname || pathname === '/' || pathname === '') {
+            isIndexOrRoot = true;
+          } else {
+            var segments = pathname.split('/').filter(function(s) { return s && s.length > 0; });
+            var lastSegment = segments.length > 0 ? segments[segments.length - 1].toLowerCase() : '';
+            if (lastSegment === 'index.html' || lastSegment === '' || pathname.endsWith('/')) {
               isIndexOrRoot = true;
-            } else {
-              var lastSegment = pathname.split('/').filter(function(s) { return s; }).pop() || '';
-              if (lastSegment === 'index.html' || lastSegment === '' || pathname.endsWith('/')) {
-                isIndexOrRoot = true;
-              }
+            }
+          }
+          
+          console.log('Is index or root:', isIndexOrRoot);
+          
+          // Jika ini index/root, cek sessionStorage
+          if (isIndexOrRoot) {
+            var hasLaunched = false;
+            try {
+              var stored = sessionStorage.getItem('sitsense-app-launched');
+              hasLaunched = stored === 'true';
+              console.log('SessionStorage value:', stored, 'Has launched:', hasLaunched);
+            } catch(e) {
+              console.warn('SessionStorage not available:', e);
+              // Jika sessionStorage tidak tersedia, anggap belum launch dan redirect
+              hasLaunched = false;
             }
             
-            // Jika ini index/root, cek sessionStorage
-            if (isIndexOrRoot) {
-              var hasLaunched = false;
-              try {
-                hasLaunched = sessionStorage.getItem('sitsense-app-launched') === 'true';
-              } catch(e) {
-                // sessionStorage tidak tersedia, anggap belum launch
-              }
+            // Jika belum launch, redirect ke home
+            if (!hasLaunched) {
+              console.log('Redirecting to home.html');
+              var homeUrl = 'home.html' + hash;
               
-              // Jika belum launch, redirect ke home
-              if (!hasLaunched) {
-                // Build home URL - relative path
-                var homeUrl = 'home.html' + hash;
-                
-                // Redirect immediately
-                if (window.location.replace) {
-                  window.location.replace(homeUrl);
-                } else {
-                  window.location.href = homeUrl;
-                }
-                
-                // Prevent further execution
-                return;
-              }
+              // Redirect immediately
+              window.location.replace(homeUrl);
+              // Prevent further execution
+              return;
+            } else {
+              console.log('Has launched flag, staying on index.html');
             }
           }
         } catch(e) {
-          // Jika terjadi error, default redirect ke home untuk safety
-          console.warn('Redirect check failed:', e);
+          console.error('Redirect check error:', e);
+          // Jika terjadi error, default: jika tidak di home.html, redirect ke home
           try {
-            if (window.location.pathname.indexOf('home.html') === -1) {
-              window.location.replace('home.html');
+            if (window.location.pathname && window.location.pathname.indexOf('home.html') === -1) {
+              if (window.location.pathname.indexOf('index.html') !== -1 || 
+                  window.location.pathname === '/' || 
+                  window.location.pathname.endsWith('/')) {
+                window.location.replace('home.html');
+              }
             }
           } catch(e2) {
-            // Ignore
+            console.error('Fallback redirect failed:', e2);
           }
         }
       })();
