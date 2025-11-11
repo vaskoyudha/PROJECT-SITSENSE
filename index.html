@@ -1,6 +1,105 @@
 <!doctype html>
 <html lang="id" data-theme="dark">
   <head>
+    <!-- Redirect Script - HARUS di paling atas untuk memastikan redirect sebelum halaman dimuat -->
+    <script>
+      // Immediate redirect - harus dijalankan SEBELUM semua resource dimuat
+      (function() {
+        try {
+          var url = window.location.href;
+          var pathname = window.location.pathname;
+          var search = window.location.search || '';
+          var hash = window.location.hash || '';
+          
+          // Cek query parameter ?launched=true
+          var hasLaunchedParam = false;
+          try {
+            if (window.URLSearchParams) {
+              var urlParams = new URLSearchParams(search);
+              hasLaunchedParam = urlParams.get('launched') === 'true';
+            } else {
+              // Fallback untuk browser yang tidak support URLSearchParams
+              hasLaunchedParam = search.indexOf('launched=true') > -1 || 
+                                search.indexOf('?launched=true') > -1 ||
+                                search.indexOf('&launched=true') > -1;
+            }
+          } catch(e) {
+            // Fallback manual
+            hasLaunchedParam = search.indexOf('launched=true') > -1;
+          }
+          
+          // Jika ada parameter launched=true, set sessionStorage dan lanjutkan
+          if (hasLaunchedParam) {
+            try {
+              sessionStorage.setItem('sitsense-app-launched', 'true');
+              // Remove query parameter dari URL untuk clean URL
+              var cleanUrl = window.location.origin + window.location.pathname + hash;
+              if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, '', cleanUrl);
+              }
+              // Lanjutkan loading halaman
+              return;
+            } catch(e) {
+              // Jika sessionStorage error, tetap lanjutkan
+            }
+          }
+          
+          // Cek apakah sudah di home.html
+          var isOnHomePage = url.indexOf('home.html') > -1 || pathname.indexOf('home.html') > -1;
+          
+          // Jika belum di home page, cek apakah ini index/root
+          if (!isOnHomePage) {
+            var isIndexOrRoot = false;
+            
+            // Cek berbagai kemungkinan path untuk index/root
+            if (!pathname || pathname === '/' || pathname === '') {
+              isIndexOrRoot = true;
+            } else {
+              var lastSegment = pathname.split('/').filter(function(s) { return s; }).pop() || '';
+              if (lastSegment === 'index.html' || lastSegment === '' || pathname.endsWith('/')) {
+                isIndexOrRoot = true;
+              }
+            }
+            
+            // Jika ini index/root, cek sessionStorage
+            if (isIndexOrRoot) {
+              var hasLaunched = false;
+              try {
+                hasLaunched = sessionStorage.getItem('sitsense-app-launched') === 'true';
+              } catch(e) {
+                // sessionStorage tidak tersedia, anggap belum launch
+              }
+              
+              // Jika belum launch, redirect ke home
+              if (!hasLaunched) {
+                // Build home URL - relative path
+                var homeUrl = 'home.html' + hash;
+                
+                // Redirect immediately
+                if (window.location.replace) {
+                  window.location.replace(homeUrl);
+                } else {
+                  window.location.href = homeUrl;
+                }
+                
+                // Prevent further execution
+                return;
+              }
+            }
+          }
+        } catch(e) {
+          // Jika terjadi error, default redirect ke home untuk safety
+          console.warn('Redirect check failed:', e);
+          try {
+            if (window.location.pathname.indexOf('home.html') === -1) {
+              window.location.replace('home.html');
+            }
+          } catch(e2) {
+            // Ignore
+          }
+        }
+      })();
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SitSense — Dashboard</title>
@@ -110,24 +209,6 @@
         z-index: 2;
       }
     </style>
-    <script>
-      // Redirect ke home.html saat pertama kali menjalankan program
-      (function() {
-        const currentPath = window.location.pathname.toLowerCase();
-        const isHomePage = currentPath.includes('home.html');
-        const isIndexPage = currentPath.includes('index.html') || 
-                           currentPath.endsWith('/') || 
-                           currentPath === '/';
-        
-        // Cek apakah user sudah meluncurkan aplikasi dalam session ini
-        const hasLaunchedApp = sessionStorage.getItem('sitsense-app-launched');
-        
-        // Jika user mengakses index.html/root dan belum meluncurkan app, redirect ke home.html
-        if (isIndexPage && !isHomePage && !hasLaunchedApp) {
-          window.location.replace('./home.html');
-        }
-      })();
-    </script>
   </head>
   <body class="min-h-screen text-slate-100">
     <!-- ================= WELCOME SPLASH ================= -->

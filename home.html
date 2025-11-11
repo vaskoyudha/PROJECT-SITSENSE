@@ -330,7 +330,7 @@
           <a href="#for-developers" class="text-slate-300 hover:text-cyan-300 transition-colors">For Developers</a>
           <a href="#contact" class="text-slate-300 hover:text-cyan-300 transition-colors">Contact</a>
         </div>
-        <a href="./index.html" class="btn btn-gradient-primary normal-case px-6 relative">
+        <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-6 relative" id="launchAppBtn">
           <span class="relative z-10">Launch App</span>
         </a>
       </div>
@@ -422,7 +422,7 @@
         
         <!-- CTA Buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10" data-aos="fade-up" data-aos-delay="600">
-          <a href="./index.html" class="btn btn-gradient-primary normal-case px-8 py-3 text-base font-semibold relative">
+          <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-8 py-3 text-base font-semibold relative">
             <i data-lucide="rocket" class="h-5 w-5 mr-2 relative z-10"></i>
             <span class="relative z-10">Launch App</span>
           </a>
@@ -708,7 +708,7 @@
                     <span class="text-slate-300">Role-based access control</span>
                   </li>
                 </ul>
-                <a href="./index.html" class="btn btn-gradient-primary normal-case relative">
+                <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case relative">
                   <span class="relative z-10">Mulai dengan Tim</span>
                 </a>
               </div>
@@ -953,10 +953,49 @@ const response = await fetch(
       });
 
       // Set sessionStorage ketika user mengklik "Launch App" untuk mengakses dashboard
-      document.querySelectorAll('a[href*="index.html"]').forEach(link => {
-        link.addEventListener('click', function() {
-          sessionStorage.setItem('sitsense-app-launched', 'true');
+      // Gunakan capture phase untuk memastikan event handler dijalankan lebih awal
+      document.addEventListener('click', function(e) {
+        var target = e.target;
+        // Cari link terdekat yang mengarah ke index.html
+        while (target && target !== document) {
+          if (target.tagName === 'A' && target.href && target.href.indexOf('index.html') > -1) {
+            try {
+              sessionStorage.setItem('sitsense-app-launched', 'true');
+              // Konfirmasi nilai sudah tersimpan
+              console.log('App launch flag set:', sessionStorage.getItem('sitsense-app-launched'));
+            } catch(err) {
+              console.error('Failed to set sessionStorage:', err);
+            }
+            break;
+          }
+          target = target.parentElement;
+        }
+      }, true); // true = use capture phase
+      
+      // Juga set untuk semua link yang mengarah ke index.html
+      document.querySelectorAll('a[href*="index.html"]').forEach(function(link) {
+        // Set pada mouseover untuk memastikan flag sudah set sebelum click
+        link.addEventListener('mouseenter', function() {
+          try {
+            sessionStorage.setItem('sitsense-app-launched', 'true');
+          } catch(e) {
+            // Ignore
+          }
         });
+        // Set pada click sebagai backup
+        link.addEventListener('click', function(e) {
+          try {
+            sessionStorage.setItem('sitsense-app-launched', 'true');
+            // Small delay untuk memastikan sessionStorage tersimpan
+            setTimeout(function() {
+              if (sessionStorage.getItem('sitsense-app-launched') !== 'true') {
+                sessionStorage.setItem('sitsense-app-launched', 'true');
+              }
+            }, 10);
+          } catch(err) {
+            console.error('Failed to set sessionStorage on click:', err);
+          }
+        }, false);
       });
     </script>
   </body>
