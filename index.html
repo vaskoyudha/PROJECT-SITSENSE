@@ -111,16 +111,20 @@
       }
     </style>
     <script>
-      // Redirect ke home.html jika ini kunjungan pertama
+      // Redirect ke home.html saat pertama kali menjalankan program
       (function() {
-        const hasVisitedHome = localStorage.getItem('sitsense-visited-home');
         const currentPath = window.location.pathname.toLowerCase();
-        const isHomePage = currentPath.includes('home.html') || currentPath.endsWith('/home');
-        const isIndexPage = currentPath.includes('index.html') || currentPath.endsWith('/') || currentPath.endsWith('/newdesign');
+        const isHomePage = currentPath.includes('home.html');
+        const isIndexPage = currentPath.includes('index.html') || 
+                           currentPath.endsWith('/') || 
+                           currentPath === '/';
         
-        // Jika belum pernah ke home dan sedang di index, redirect ke home
-        if (!hasVisitedHome && isIndexPage && !isHomePage) {
-          window.location.href = './home.html';
+        // Cek apakah user sudah meluncurkan aplikasi dalam session ini
+        const hasLaunchedApp = sessionStorage.getItem('sitsense-app-launched');
+        
+        // Jika user mengakses index.html/root dan belum meluncurkan app, redirect ke home.html
+        if (isIndexPage && !isHomePage && !hasLaunchedApp) {
+          window.location.replace('./home.html');
         }
       })();
     </script>

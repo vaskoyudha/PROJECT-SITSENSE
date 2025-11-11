@@ -951,6 +951,13 @@ const response = await fetch(
           }
         });
       });
+
+      // Set sessionStorage ketika user mengklik "Launch App" untuk mengakses dashboard
+      document.querySelectorAll('a[href*="index.html"]').forEach(link => {
+        link.addEventListener('click', function() {
+          sessionStorage.setItem('sitsense-app-launched', 'true');
+        });
+      });
     </script>
   </body>
 </html>
