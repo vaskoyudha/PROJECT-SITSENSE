@@ -722,6 +722,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // --- Ultrasonic UI (baru) ---
+  function updateUltrasonicUI(backCm, neckCm) {
+    const backValEl = document.getElementById('ultraBackVal');
+    const neckValEl = document.getElementById('ultraNeckVal');
+    const backStatusEl = document.getElementById('ultraBackStatus');
+    const neckStatusEl = document.getElementById('ultraNeckStatus');
+    
+    const formatVal = (v) => {
+      if (!Number.isFinite(v) || v <= 0) return '—';
+      // Tampilkan tanpa angka di belakang koma (truncate)
+      return String(Math.trunc(v));
+    };
+    if (backValEl) backValEl.textContent = formatVal(backCm);
+    if (neckValEl) neckValEl.textContent = formatVal(neckCm);
+    
+    const applyStatus = (el, value, kind) => {
+      if (!el) return;
+      // Reset classes
+      el.className = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300';
+      // Dot element is the first span inside
+      let dot = el.querySelector('span');
+      if (!dot) {
+        dot = document.createElement('span');
+        el.prepend(dot);
+      }
+      dot.className = 'h-2 w-2 rounded-full bg-slate-400';
+      
+      // Determine ranges per sensor
+      // Back ideal: 20-35 cm; caution: 15-20 or 35-45; danger: <15 or >45
+      // Neck ideal: 25-35 cm; caution: 20-25 or 35-45; danger: <20 or >45
+      let label = '—';
+      if (!Number.isFinite(value) || value <= 0) {
+        label = 'Menunggu';
+        dot.className = 'h-2 w-2 rounded-full bg-slate-400';
+        el.textContent = label;
+        el.prepend(dot);
+        return;
+      }
+      
+      let idealMin = kind === 'back' ? 20 : 25;
+      let idealMax = 35;
+      let cautionLowMin = kind === 'back' ? 15 : 20;
+      let cautionLowMax = kind === 'back' ? 20 : 25;
+      let cautionHighMin = 35;
+      let cautionHighMax = 45;
+      let dangerLowMax = kind === 'back' ? 15 : 20;
+      let dangerHighMin = 45;
+      
+      if (value >= idealMin && value <= idealMax) {
+        label = 'Aman';
+        dot.className = 'h-2 w-2 rounded-full bg-emerald-400';
+        el.className += ' text-emerald-300';
+      } else if ((value >= cautionLowMin && value < cautionLowMax) || (value > cautionHighMin && value <= cautionHighMax)) {
+        label = 'Waspada';
+        dot.className = 'h-2 w-2 rounded-full bg-amber-300';
+        el.className += ' text-amber-300';
+      } else if (value < dangerLowMax || value > dangerHighMin) {
+        label = 'Berbahaya';
+        dot.className = 'h-2 w-2 rounded-full bg-rose-400';
+        el.className += ' text-rose-400';
+      } else {
+        // Between caution and danger edges
+        label = 'Waspada';
+        dot.className = 'h-2 w-2 rounded-full bg-amber-300';
+        el.className += ' text-amber-300';
+      }
+      
+      // Set label text while keeping the dot
+      el.innerHTML = '';
+      el.appendChild(dot);
+      el.append(' ', label);
+    };
+    
+    applyStatus(backStatusEl, backCm, 'back');
+    applyStatus(neckStatusEl, neckCm, 'neck');
+  }
+  window.updateUltrasonicUI = updateUltrasonicUI;
+
   // =================================================================
   // 6. ALGORITMA SKORING & LOGIKA UTAMA
   // =================================================================
@@ -816,6 +894,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const fsr = Number(v.fsr) || 0;
     let uBack = v?.ultrasonic?.punggung_cm !== undefined ? Number(v.ultrasonic.punggung_cm) : null;
     let uNeck = v?.ultrasonic?.leher_cm !== undefined ? Number(v.ultrasonic.leher_cm) : null;
+    // Simpan nilai mentah untuk ditampilkan apa adanya di dashboard
+    const rawBackForDisplay = v?.ultrasonic?.punggung_cm !== undefined ? Number(v.ultrasonic.punggung_cm) : null;
+    const rawNeckForDisplay = v?.ultrasonic?.leher_cm !== undefined ? Number(v.ultrasonic.leher_cm) : null;
     
     // KONVERSI: Jika nilai terlalu besar (> 100cm), mungkin dalam satuan yang berbeda
     // Coba konversi dari milimeter atau nilai raw sensor
@@ -881,6 +962,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateScoreBreakdown(scores);
       updateDailyStats();
       updateRecommendations(scores);
+      // Tampilkan nilai apa adanya untuk section Jarak Ultrasonik (tanpa konversi)
+      updateUltrasonicUI(
+        Number.isFinite(rawBackForDisplay) ? rawBackForDisplay : NaN, 
+        Number.isFinite(rawNeckForDisplay) ? rawNeckForDisplay : NaN
+      );
       
       // Hitung FSR percentage untuk heatmap dan balance
       const fsrPct = Math.round(clamp(fsr / 4095 * 100, 0, 100));

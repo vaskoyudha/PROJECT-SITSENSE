@@ -162,6 +162,10 @@
           }
           window.firebaseAuth = firebase.auth();
           window.firebaseDb = firebase.database();
+          // Ekspos konfigurasi agar komponen lain bisa menggunakannya
+          window.FIREBASE_CONFIG = firebaseConfig;
+          // Opsional: set endpoint backend Anda di sini (atau biarkan null untuk menonaktifkan)
+          window.BACKEND_ENDPOINT = window.BACKEND_ENDPOINT || null; // contoh: '/api/monitoring'
           console.log('[Firebase] Initialized in HTML');
         } catch (e) {
           console.error('[Firebase] Initialization error:', e);
@@ -225,9 +229,33 @@
         position: relative;
         z-index: 2;
       }
+
+      /* Animated background gradient for dashboard */
+      .animated-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: radial-gradient(1200px 800px at 10% 20%, rgba(6,182,212,0.18), transparent 60%),
+                    radial-gradient(900px 700px at 90% 10%, rgba(139,92,246,0.16), transparent 60%),
+                    radial-gradient(1000px 900px at 30% 90%, rgba(16,185,129,0.16), transparent 60%);
+        filter: blur(0px);
+        animation: bgFloatA 22s ease-in-out infinite alternate, bgFloatB 28s ease-in-out infinite alternate-reverse;
+      }
+      @keyframes bgFloatA {
+        0%   { transform: translate3d(0, 0, 0) scale(1); }
+        50%  { transform: translate3d(0px, -20px, 0) scale(1.02); }
+        100% { transform: translate3d(0px, 30px, 0) scale(1.03); }
+      }
+      @keyframes bgFloatB {
+        0%   { filter: hue-rotate(0deg) saturate(100%); }
+        50%  { filter: hue-rotate(10deg) saturate(115%); }
+        100% { filter: hue-rotate(-10deg) saturate(110%); }
+      }
     </style>
   </head>
   <body class="min-h-screen text-slate-100">
+    <div class="animated-bg"></div>
     <!-- ================= WELCOME SPLASH ================= -->
     <div x-data="{ show: true }" x-init="setTimeout(()=>show=false, 2200)" x-show="show"
          x-transition.opacity.duration.500ms
@@ -413,6 +441,45 @@
             </ul>
           </div>
         </div>
+        <div class="card glassy-card card-border md:col-span-3 lg:col-span-1" data-aos="fade-up" data-aos-delay="150">
+          <div class="card-body">
+            <div class="flex items-center justify-between">
+              <h3 class="card-title text-base">Jarak Ultrasonik</h3>
+              <i data-lucide="ruler" class="h-5 w-5 text-cyan-300"></i>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-4">
+              <div class="text-center">
+                <div class="text-xs text-slate-400">Punggung</div>
+                <div class="mt-1 text-3xl font-bold">
+                  <span id="ultraBackVal">—</span>
+                  <span class="text-base font-semibold text-slate-400">cm</span>
+                </div>
+                <div class="mt-1 text-xs">
+                  <span id="ultraBackStatus" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300">
+                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                    — 
+                  </span>
+                </div>
+              </div>
+              <div class="text-center">
+                <div class="text-xs text-slate-400">Leher</div>
+                <div class="mt-1 text-3xl font-bold">
+                  <span id="ultraNeckVal">—</span>
+                  <span class="text-base font-semibold text-slate-400">cm</span>
+                </div>
+                <div class="mt-1 text-xs">
+                  <span id="ultraNeckStatus" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300">
+                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                    — 
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 text-[11px] text-slate-400">
+              Indikasi: <span class="text-emerald-400 font-medium">Hijau = Aman</span>, <span class="text-amber-300 font-medium">Kuning = Waspada</span>, <span class="text-rose-400 font-medium">Merah = Berbahaya</span>
+            </div>
+          </div>
+        </div>
       </section>
       
 
@@ -482,6 +549,57 @@
           </div>
         </div>
       </section>
+
+      <!-- Monitoring Tubuh (React Embed) -->
+      <section class="card glassy-card card-border" data-aos="fade-up">
+        <div class="card-body">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="card-title">Monitoring Tubuh (Eksperimen)</h3>
+            <i data-lucide="radar" class="h-5 w-5 text-cyan-300"></i>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-white/10">
+            <iframe src="./components/monitoring-tubuh.html" title="Monitoring Tubuh" style="width: 100%; height: 860px; border: 0; background: transparent;"></iframe>
+          </div>
+        </div>
+      </section>
+      <script>
+        // Sinkronkan nilai dari iframe Monitoring Tubuh ke section "Jarak Ultrasonik"
+        (function() {
+          const elBackVal = document.getElementById('ultraBackVal');
+          const elBackStatus = document.getElementById('ultraBackStatus');
+          const elNeckVal = document.getElementById('ultraNeckVal');
+          const elNeckStatus = document.getElementById('ultraNeckStatus');
+          if (!elBackVal || !elBackStatus || !elNeckVal || !elNeckStatus) return;
+          const updateBadge = (container, status) => {
+            const dot = container.querySelector('span.h-2.w-2');
+            const textNode = container.childNodes[container.childNodes.length - 1];
+            // Reset dot color
+            if (dot) {
+              dot.classList.remove('bg-slate-400','bg-emerald-400','bg-amber-300','bg-rose-400');
+              const map = { green: 'bg-emerald-400', yellow: 'bg-amber-300', red: 'bg-rose-400' };
+              dot.classList.add(map[status.color] || 'bg-slate-400');
+            }
+            if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+              textNode.textContent = ' ' + (status.text || '—');
+            } else {
+              container.appendChild(document.createTextNode(' ' + (status.text || '—')));
+            }
+          };
+          window.addEventListener('message', function(ev) {
+            const msg = ev?.data;
+            if (!msg || msg.type !== 'SITSENSE_ULTRA_UPDATE' || !msg.data) return;
+            const d = msg.data;
+            if (typeof d.backDistance === 'number') {
+              elBackVal.textContent = d.backDistance.toFixed(1);
+              updateBadge(elBackStatus, d.backStatus || { text: '—', color: 'green' });
+            }
+            if (typeof d.neckDistance === 'number') {
+              elNeckVal.textContent = d.neckDistance.toFixed(1);
+              updateBadge(elNeckStatus, d.neckStatus || { text: '—', color: 'green' });
+            }
+          }, false);
+        })();
+      </script>
 
       <!-- Score Breakdown -->
       <section class="card glassy-card card-border" data-aos="fade-up">
