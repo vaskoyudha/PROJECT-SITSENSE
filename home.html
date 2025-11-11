@@ -330,6 +330,7 @@
           <a href="#for-developers" class="text-slate-300 hover:text-cyan-300 transition-colors">For Developers</a>
           <a href="#contact" class="text-slate-300 hover:text-cyan-300 transition-colors">Contact</a>
         </div>
+        <div id="authNav" class="hidden md:flex items-center gap-3"></div>
         <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-6 relative" id="launchAppBtn" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
           <span class="relative z-10" style="pointer-events: none;">Launch App</span>
         </a>
@@ -922,6 +923,7 @@ const response = await fetch(
 
     <!-- ================= SCRIPTS ================= -->
     <script src="./assets/js/image-loader.js"></script>
+    <script src="./assets/js/auth.js"></script>
     <script>
       // Tandai bahwa user sudah mengunjungi home
       localStorage.setItem('sitsense-visited-home', 'true');
