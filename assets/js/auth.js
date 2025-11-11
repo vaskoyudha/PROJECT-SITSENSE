@@ -94,7 +94,7 @@
     logout() {
       setSession(null);
     },
-    requireAuth({ redirectTo = '/auth/login.html' } = {}) {
+    requireAuth({ redirectTo = '/auth/masuk/' } = {}) {
       if (!Auth.isLoggedIn()) {
         window.location.href = redirectTo + '?next=' + encodeURIComponent(window.location.pathname);
       }
@@ -127,8 +127,8 @@
         } else {
           authNav.innerHTML = '' +
             '<div class="flex items-center gap-3">' +
-              '<a href="/auth/login.html" class="text-slate-300 hover:text-cyan-300 text-sm">Masuk</a>' +
-              '<a href="/auth/register.html" class="btn btn-ghost btn-sm normal-case">Daftar</a>' +
+              '<a href="/auth/masuk/" class="text-slate-300 hover:text-cyan-300 text-sm">Masuk</a>' +
+              '<a href="/auth/daftar/" class="btn btn-ghost btn-sm normal-case">Daftar</a>' +
             '</div>';
         }
       }
