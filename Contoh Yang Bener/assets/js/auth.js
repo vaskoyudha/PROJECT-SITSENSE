@@ -1,6 +1,5 @@
 (function() {
   const SESSION_KEY = 'sitsense-auth-cache';
-  const PROFILE_CACHE_KEY = 'sitsense-profile-cache';
   let currentUser = null;
   let googleProvider = null;
 
@@ -31,40 +30,6 @@
       }
     } catch (err) {
       console.warn('[Auth] Failed to cache session:', err);
-    }
-  }
-
-  function cacheProfile(profile) {
-    try {
-      if (!window.localStorage) return;
-    } catch (_) {
-      return;
-    }
-    try {
-      if (profile) {
-        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
-      } else {
-        localStorage.removeItem(PROFILE_CACHE_KEY);
-      }
-      window.SitSenseProfile = profile || null;
-      document.dispatchEvent(new CustomEvent('sitsense:profile', { detail: profile || null }));
-    } catch (err) {
-      console.warn('[Profile] Failed to cache profile:', err);
-    }
-  }
-
-  function getCachedProfile() {
-    try {
-      if (!window.localStorage) return null;
-    } catch (_) {
-      return null;
-    }
-    try {
-      const raw = localStorage.getItem(PROFILE_CACHE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (err) {
-      console.warn('[Profile] Failed to read cached profile:', err);
-      return null;
     }
   }
 
@@ -119,48 +84,6 @@
     }
     googleProvider = new firebase.auth.GoogleAuthProvider();
     return googleProvider;
-  }
-
-  async function getDatabaseRef(path) {
-    if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') {
-      throw new Error('Firebase database belum siap.');
-    }
-    return firebase.database().ref(path);
-  }
-
-  async function readProfile(uid, fallbackName) {
-    if (!uid) return null;
-    try {
-      const ref = await getDatabaseRef('profiles/' + uid);
-      const snap = await ref.get();
-      if (snap.exists()) {
-        return snap.val();
-      }
-      const profile = {
-        displayName: fallbackName || 'Pengguna',
-        dateOfBirth: null,
-        needsSetup: true,
-        createdAt: Date.now()
-      };
-      await ref.set(profile);
-      return profile;
-    } catch (err) {
-      console.warn('[Profile] Failed to read profile:', err);
-      return null;
-    }
-  }
-
-  async function writeProfile(uid, data) {
-    if (!uid) return null;
-    try {
-      const ref = await getDatabaseRef('profiles/' + uid);
-      await ref.update(data);
-      const snap = await ref.get();
-      return snap.exists() ? snap.val() : data;
-    } catch (err) {
-      console.warn('[Profile] Failed to write profile:', err);
-      throw err;
-    }
   }
 
   async function ensureDisplayName(user, name) {
@@ -266,29 +189,7 @@
       currentUser = user || null;
       cacheSession(user || null);
       updateAuthUI(user || null);
-      handleProfileState(user || null);
     });
-  }
-
-  async function handleProfileState(user) {
-    if (!user) {
-      cacheProfile(null);
-      return;
-    }
-    try {
-      const profile = await readProfile(user.uid, user.displayName || user.email);
-      cacheProfile(profile);
-      const isSetupPage = window.location.pathname.endsWith('/profile-setup.html');
-      if (profile?.needsSetup && !isSetupPage) {
-        window.location.href = '/profile-setup.html';
-        return;
-      }
-      if (!profile?.needsSetup && isSetupPage) {
-        window.location.href = '/profile.html';
-      }
-    } catch (err) {
-      console.warn('[Profile] Unable to load profile:', err);
-    }
   }
 
   const Auth = {
@@ -297,39 +198,6 @@
     },
     isLoggedIn() {
       return !!(currentUser || getCachedSession());
-    },
-    getProfile() {
-      return getCachedProfile();
-    },
-    async reloadProfile() {
-      if (!currentUser) {
-        return getCachedProfile();
-      }
-      const profile = await readProfile(currentUser.uid, currentUser.displayName || currentUser.email);
-      cacheProfile(profile);
-      return profile;
-    },
-    async completeProfile({ displayName, dateOfBirth }) {
-      if (!currentUser) {
-        throw new Error('Pengguna belum login.');
-      }
-      const trimmed = displayName ? displayName.trim() : '';
-      if (!trimmed) {
-        return { ok: false, message: 'Nama tidak boleh kosong.' };
-      }
-      try {
-        await ensureDisplayName(currentUser, trimmed);
-        const profile = await writeProfile(currentUser.uid, {
-          displayName: trimmed,
-          dateOfBirth: dateOfBirth || null,
-          needsSetup: false,
-          updatedAt: Date.now()
-        });
-        cacheProfile(profile);
-        return { ok: true, profile };
-      } catch (err) {
-        return { ok: false, message: err?.message || 'Gagal menyimpan profil.', error: err };
-      }
     },
     async register({ name, email, password, confirmPassword }) {
       if (!name || name.trim().length < 2) {
@@ -356,17 +224,9 @@
           await ensureDisplayName(credential.user, name.trim());
           currentUser = credential.user;
           cacheSession(credential.user);
-          await writeProfile(credential.user.uid, {
-            displayName: name.trim(),
-            dateOfBirth: null,
-            needsSetup: true,
-            createdAt: Date.now()
-          });
-          cacheProfile({ displayName: name.trim(), dateOfBirth: null, needsSetup: true });
           updateAuthUI(credential.user);
-          window.location.href = '/profile-setup.html';
         }
-        return { ok: true, message: 'Registrasi berhasil.', user: credential?.user || null, needsSetup: true };
+        return { ok: true, message: 'Registrasi berhasil.', user: credential?.user || null };
       } catch (error) {
         return { ok: false, message: mapFirebaseError(error), error };
       }
@@ -462,9 +322,6 @@
     initUI() {
       updateAuthUI(currentUser || getCachedSession());
       initAuthListener();
-      if (currentUser) {
-        handleProfileState(currentUser);
-      }
     }
   };
 
@@ -473,6 +330,4 @@
   document.addEventListener('DOMContentLoaded', () => {
     Auth.initUI();
   });
-
-  window.SitSenseProfile = getCachedProfile();
 })();
