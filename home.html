@@ -196,6 +196,53 @@
         animation: pulse-glow 3s ease-in-out infinite;
       }
 
+
+/* IoT showcase layout */
+#iotCardViewport {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding-bottom: 0.5rem;
+}
+#iotCardViewport::-webkit-scrollbar {
+  height: 6px;
+}
+#iotCardViewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+#iotCardViewport::-webkit-scrollbar-thumb {
+  background: rgba(34,211,238,0.4);
+  border-radius: 999px;
+}
+#iotCardTrack {
+  display: flex;
+  gap: 1.5rem;
+}
+      .iot-card {
+        flex: 0 0 auto;
+        width: clamp(220px, 28vw, 280px);
+        scroll-snap-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+.iot-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 35px rgba(8, 15, 35, 0.4);
+}
+.iot-card__image {
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(255,255,255,0.03);
+}
+.iot-gradient-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+}
       nav[data-nav-shell] {
         will-change: transform;
       }
@@ -763,6 +810,202 @@ const response = await fetch(
       </div>
     </section>
 
+    <!-- ================= IOT SHOWCASE SECTION ================= -->
+    <section id="iot-showcase" class="py-20 md:py-32 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5" data-aos="fade-up">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 space-y-16">
+        <div class="text-center max-w-3xl mx-auto">
+          <span class="inline-flex items-center gap-2 text-xs tracking-[0.4em] text-cyan-300 uppercase mb-4">
+            <i data-lucide="circuit-board" class="h-4 w-4"></i>
+            IoT Integrations
+          </span>
+          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+            Sensor Cerdas, Data yang Berbicara
+          </h2>
+          <p class="text-lg md:text-xl text-slate-400">
+            SitSense menggabungkan sensor tekanan, modul konektivitas, dan gateway cloud sehingga pengalaman monitoring terasa real-time dan presisi.
+          </p>
+        </div>
+
+        <div class="glassy-card card-border p-8 md:p-12">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <!-- Left: Stepper explanation -->
+            <div class="space-y-8">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-400/40">
+                  <span class="font-semibold text-cyan-200">1</span>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Sensor Tekanan Kursi</h3>
+                  <p class="text-slate-400 text-sm leading-relaxed">Panel sensor piezo-elektrik mendeteksi distribusi berat tubuh dan mengirimkan data matrix tekanan. Ideal untuk memantau postur duduk menit demi menit.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-400/40">
+                  <span class="font-semibold text-emerald-200">2</span>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">NodeMCU / ESP32 Gateway</h3>
+                  <p class="text-slate-400 text-sm leading-relaxed">Microcontroller ESP32 menggabungkan Wi‑Fi, BLE, dan ADC sehingga data sensor langsung ditransmisikan ke cloud SitSense, lengkap dengan enkripsi TLS.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/40">
+                  <span class="font-semibold text-purple-200">3</span>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Gateway Cloud & AI Engine</h3>
+                  <p class="text-slate-400 text-sm leading-relaxed">Data yang masuk dianalisis oleh machine learning posture model untuk menghasilkan skor postur, rekomendasi Gemini AI, dan pengingat adaptif.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-400/40">
+                  <span class="font-semibold text-amber-200">4</span>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Dashboard & Alert Layer</h3>
+                  <p class="text-slate-400 text-sm leading-relaxed">UI SitSense merender data secara realtime, menyalakan notifikasi, dan menampilkan pembaruan streak agar kebiasaan duduk sehat terjaga.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-4 border-t border-white/5">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.4em] text-slate-500">integrasi lengkap</p>
+                  <p class="text-2xl font-semibold text-slate-100">Sensor → Cloud → Dashboard</p>
+                </div>
+                <button class="btn btn-gradient-outline normal-case gap-2" id="iotNextBtn">
+                  Selanjutnya
+                  <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right: Image placeholders carousel -->
+            <div class="space-y-6">
+              <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                <p>Foto modul sensor tekanan</p>
+                <p class="text-xs">(drag & drop nanti)</p>
+              </div>
+              <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                <p>Foto NodeMCU / ESP32</p>
+              </div>
+              <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                <p>Foto gateway cloud / server rack</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-500">Komponen Kunci</p>
+              <h3 class="text-2xl font-semibold text-slate-100">Modul IoT yang Digunakan</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="iotPrevCards" class="btn btn-sm btn-outline border-white/20 text-slate-200 normal-case">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+              </button>
+              <button id="iotNextCards" class="btn btn-sm btn-gradient-outline normal-case gap-2">
+                Selanjutnya
+                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="iotCardViewport">
+            <div id="iotCardTrack">
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Sensor FSR pada dudukan kursi
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Sensor Tekanan FSR</h4>
+                <p class="text-sm text-slate-400">Menangkap distribusi berat tubuh di dudukan untuk mendeteksi shifting postur yang terlalu condong.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Sensor Ultrasonik / Infrared sandaran
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Sensor Ultrasonik</h4>
+                <p class="text-sm text-slate-400">Membaca jarak punggung dengan sandaran untuk mendeteksi forward head posture dan membungkuk.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Modul ESP32 / NodeMCU
+                </div>
+                <h4 class="text-lg font-semibold mb-2">ESP32 Gateway</h4>
+                <p class="text-sm text-slate-400">Menggabungkan Wi‑Fi, BLE, dan ADC sehingga seluruh sensor diproses dan dikirim ke cloud secara aman.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  DF Player Mini + speaker
+                </div>
+                <h4 class="text-lg font-semibold mb-2">DF Player + Speaker</h4>
+                <p class="text-sm text-slate-400">Memberi peringatan suara personal ketika postur keluar dari batas ideal sehingga pengguna langsung aware.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Buzzer module
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Buzzer & LED Indicator</h4>
+                <p class="text-sm text-slate-400">Tambahan feedback audio/visual berintensitas rendah agar pengguna dapat melakukan koreksi cepat.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Push button kalibrasi
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Push Button Kalibrasi</h4>
+                <p class="text-sm text-slate-400">Memungkinkan pengguna menentukan baseline postur ideal mereka sebelum sesi monitoring dimulai.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Breadboard dan jumper
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Breadboard & Kabel Jumper</h4>
+                <p class="text-sm text-slate-400">Memudahkan prototyping tanpa solder sehingga sensor bisa dikonfigurasi ulang sesuai eksperimen.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Kursi & layout sensor
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Media Kursi</h4>
+                <p class="text-sm text-slate-400">Kursi ergonomis menjadi platform utama penempatan sensor, memastikan pembacaan sesuai anatomi pengguna.</p>
+              </article>
+
+              <article class="iot-card glassy-card card-border p-6">
+                <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
+                  <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                  Kabel USB-C
+                </div>
+                <h4 class="text-lg font-semibold mb-2">Kabel USB-C</h4>
+                <p class="text-sm text-slate-400">Menyalurkan daya serta jalur komunikasi serial saat proses flashing firmware atau debugging live.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= CONTACT SECTION ================= -->
     <section id="contact" class="py-20 md:py-32 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5" data-aos="fade-up">
       <div class="max-w-7xl mx-auto px-4 md:px-6">
@@ -878,6 +1121,24 @@ const response = await fetch(
     <!-- ================= SCRIPTS ================= -->
     <script src="./assets/js/image-loader.js"></script>
     <script src="./assets/js/auth.js"></script>
+    <script>
+      document.getElementById('iotNextBtn')?.addEventListener('click', () => {
+        const target = document.getElementById('contact');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+      const viewport = document.getElementById('iotCardViewport');
+      const prev = document.getElementById('iotPrevCards');
+      const next = document.getElementById('iotNextCards');
+      const scrollCards = (dir) => {
+        if (!viewport) return;
+        const amount = viewport.offsetWidth * 0.9;
+        viewport.scrollBy({ left: dir * amount, behavior: 'smooth' });
+      };
+      prev?.addEventListener('click', () => scrollCards(-1));
+      next?.addEventListener('click', () => scrollCards(1));
+    </script>
     <script>
       // Tandai bahwa user sudah mengunjungi home
       localStorage.setItem('sitsense-visited-home', 'true');
@@ -1018,3 +1279,6 @@ const response = await fetch(
     </script>
   </body>
 </html>
+      @media (min-width: 1024px) {
+        .iot-card { width: 300px; }
+      }
