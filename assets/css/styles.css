@@ -122,6 +122,60 @@ body::before {
 }
 .shadow-soft { box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 
+/* Gradient outline button */
+.btn-gradient-outline {
+  background: transparent;
+  border: 2px solid transparent;
+  color: #e7eefc;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+  box-shadow: none;
+}
+.btn-gradient-outline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6, #10b981);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: 0;
+}
+.btn-gradient-outline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2), rgba(16, 185, 129, 0.2));
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+.btn-gradient-outline:hover {
+  color: #ffffff;
+  box-shadow: 
+    0 0 25px rgba(6, 182, 212, 0.4),
+    0 0 50px rgba(139, 92, 246, 0.3),
+    inset 0 0 25px rgba(6, 182, 212, 0.15);
+  transform: translateY(-1px) scale(1.02);
+}
+.btn-gradient-outline:hover::after { left: 100%; }
+.btn-gradient-outline:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s;
+}
+.btn-gradient-outline .relative,
+.btn-gradient-outline span {
+  position: relative;
+  z-index: 2;
+}
+
 /* Navigation Styles */
 .nav-item {
   color: rgba(231, 238, 252, 0.7);
@@ -246,6 +300,85 @@ main.sidebar-collapsed.sidebar-initializing {
   display: none !important;
 }
 
+[data-sidebar-scroll-region] {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-sidebar-scroll-region]::before,
+[data-sidebar-scroll-region]::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 2.75rem;
+  height: 2.25rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+}
+
+[data-sidebar-scroll-region]::before {
+  top: 0;
+  background: linear-gradient(180deg, rgba(11, 18, 32, 0.9), rgba(11, 18, 32, 0));
+}
+
+[data-sidebar-scroll-region]::after {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(11, 18, 32, 0.9), rgba(11, 18, 32, 0));
+}
+
+[data-sidebar-scroll-region].scrollable-up::before { opacity: 1; }
+[data-sidebar-scroll-region].scrollable-down::after { opacity: 1; }
+
+.sidebar-scroll-wheel {
+  position: absolute;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  right: 0.75rem;
+  width: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 6;
+}
+
+[data-sidebar-scroll-region].is-scrollable .sidebar-scroll-wheel {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sidebar-scroll-wheel-track {
+  width: 4px;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.35), rgba(139, 92, 246, 0.35));
+  opacity: 0.4;
+}
+
+.sidebar-scroll-wheel-thumb {
+  --thumb-progress: 0;
+  position: absolute;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6, #10b981);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.6), 0 0 20px rgba(139, 92, 246, 0.4);
+  transform: translate(-50%, 0);
+  top: calc(var(--thumb-progress) * (100% - 14px));
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+#sidebar.collapsed .sidebar-scroll-wheel {
+  opacity: 0 !important;
+  transform: translateX(10px) !important;
+}
+
 /* Header and Main margin adjustment for collapsed sidebar */
 @media (min-width: 768px) {
   /* Desktop: sidebar always visible, adjust margins */
@@ -342,5 +475,3 @@ progress.progress::-moz-progress-bar { background: var(--progress-color); }
 
 /* Accessibility helpers */
 .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
-
-

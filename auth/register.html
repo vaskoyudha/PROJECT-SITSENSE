@@ -7,6 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link rel="stylesheet" href="../assets/css/theme.css" />
     <style>
@@ -90,7 +94,17 @@
           <input id="confirmPassword" type="password" class="input input-bordered input-sm w-full bg-white/5 border-white/10" placeholder="Ulangi password" required />
         </div>
         <div id="formMsg" class="text-sm text-rose-300 min-h-5"></div>
-        <button type="submit" class="btn btn-gradient-primary btn-sm w-full normal-case">Daftar</button>
+        <button type="submit" class="btn btn-gradient-outline btn-sm w-full normal-case">Daftar</button>
+        <div class="text-center text-xs text-slate-500 uppercase tracking-wide">atau</div>
+        <button type="button" id="btnGoogleRegister" class="btn btn-outline btn-xs sm:btn-sm w-full normal-case gap-2 border-white/20 text-slate-200 hover:text-white">
+          <svg class="h-4 w-4" viewBox="0 0 533.5 544.3" aria-hidden="true" focusable="false">
+            <path fill="#4285f4" d="M533.5 278.4c0-18.5-1.5-37.1-4.7-55.2H272.1v104.7h147.5c-6.1 33.3-25.6 61.6-54.5 80.4v66h88.2c51.8-47.7 80.2-118.1 80.2-195.9z"></path>
+            <path fill="#34a853" d="M272.1 544.3c73.7 0 135.6-24.3 180.8-65.9l-88.2-66c-24.4 16.3-55.8 25.8-92.6 25.8-71 0-131.1-47.9-152.7-112.2H27.7v70.4c45.3 90.1 138.3 147.9 244.4 147.9z"></path>
+            <path fill="#fbbc04" d="M119.4 326c-10.3-30.3-10.3-62.9 0-93.2V162.4H27.7c-40.9 81.4-40.9 177.8 0 259.2z"></path>
+            <path fill="#ea4335" d="M272.1 107.7c39.9-.6 78.3 14.6 107.6 42.8l80.3-80.3C407.3 24.2 341.9-.4 272.1 0 166 0 73 57.8 27.7 147.9l91.7 70.4c21.6-64.3 81.7-110.6 152.7-110.6z"></path>
+          </svg>
+          Daftar dengan Google
+        </button>
       </form>
       <div class="mt-3 text-sm text-slate-400">
         Sudah punya akun? <a href="./login.html" class="text-cyan-300 hover:text-cyan-200">Masuk</a>
@@ -108,23 +122,58 @@
         const msg = document.getElementById('formMsg');
         const params = new URLSearchParams(location.search);
         const next = params.get('next') || '../index.html?launched=true';
-        form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const defaultBtnText = submitBtn ? submitBtn.textContent : '';
+
+        form.addEventListener('submit', async function(e) {
           e.preventDefault();
           msg.textContent = '';
           const name = document.getElementById('name').value.trim();
           const email = document.getElementById('email').value.trim();
           const password = document.getElementById('password').value;
           const confirmPassword = document.getElementById('confirmPassword').value;
-          const res = window.SitSenseAuth.register({ name, email, password, confirmPassword });
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Memproses...';
+          }
+        try {
+          const res = await window.SitSenseAuth.register({ name, email, password, confirmPassword });
           if (!res.ok) {
             msg.textContent = res.message || 'Gagal mendaftar';
             return;
           }
           window.location.href = next;
-        });
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = defaultBtnText;
+          }
+        }
       });
+
+      const googleBtn = document.getElementById('btnGoogleRegister');
+      if (googleBtn) {
+        const originalContent = googleBtn.innerHTML;
+        googleBtn.addEventListener('click', async function() {
+          msg.textContent = '';
+          googleBtn.disabled = true;
+          googleBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Menghubungkan...';
+          try {
+            const res = await window.SitSenseAuth.loginWithGoogle();
+            if (!res.ok && !res.pendingRedirect) {
+              msg.textContent = res.message || 'Gagal menggunakan Google';
+              return;
+            }
+            if (!res.pendingRedirect) {
+              window.location.href = next;
+            }
+          } finally {
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = originalContent;
+          }
+        });
+      }
+    });
     </script>
   </body>
 </html>
-
-

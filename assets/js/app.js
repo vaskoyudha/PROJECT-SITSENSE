@@ -5,6 +5,21 @@
 const auth = window.firebaseAuth || firebase.auth();
 const db = window.firebaseDb || firebase.database();
 
+// Toggle verbose logging via ?debug=1
+const __DEBUG_MODE__ = new URLSearchParams(window.location.search).get('debug') === '1';
+window.__SITSENSE_DEBUG__ = __DEBUG_MODE__;
+if (!__DEBUG_MODE__) {
+  ['log', 'info', 'warn'].forEach((method) => {
+    const original = console[method];
+    console[method] = (...args) => {
+      if (args.length && typeof args[0] === 'string' && args[0].startsWith('[SitSense]')) {
+        return;
+      }
+      return original.apply(console, args);
+    };
+  });
+}
+
 // Variables global untuk referensi
 let liveRef = null;
 let infoRef = null;
@@ -63,6 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[SitSense] No balance data to update yet');
       }
     }, 100);
+    attachBalanceObserver();
   });
 
   // =================================================================
@@ -70,15 +86,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   // =================================================================
   // Interval check untuk memastikan semua elemen ter-update setiap 2 detik
   let balanceCheckInterval = null;
+  let balanceCheckRuns = 0;
+  const MAX_BALANCE_CHECK_RUNS = 12;
+  let balanceObserverAttached = false;
   
   function startBalanceCheckInterval() {
     // Hapus interval lama jika ada
     if (balanceCheckInterval) {
       clearInterval(balanceCheckInterval);
     }
+    balanceCheckRuns = 0;
     
     // Jalankan interval check setiap 2 detik
     balanceCheckInterval = setInterval(() => {
+      balanceCheckRuns += 1;
       if (lastBalanceData) {
         // Cek apakah semua elemen sudah ter-update dengan benar
         const lrValElements = document.querySelectorAll('#balanceLRVal');
@@ -120,9 +141,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Jika elemen belum ditemukan, tunggu dan coba lagi
-        if (lrValElements.length < 2 || fbValElements.length < 2) {
-          console.log('[SitSense] Waiting for all balance elements to load... (Found:', 
+        const allElementsReady = lrValElements.length > 0 && fbValElements.length > 0 &&
+          lrFillElements.length > 0 && fbFillElements.length > 0;
+        if (!allElementsReady) {
+          console.log('[SitSense] Waiting for all balance elements to load... (Found:',
                       lrValElements.length, 'FSR,', fbValElements.length, 'FB)');
+        }
+        if ((allElementsReady && !needsUpdate) || balanceCheckRuns >= MAX_BALANCE_CHECK_RUNS) {
+          clearInterval(balanceCheckInterval);
+          balanceCheckInterval = null;
+          console.log('[SitSense] Balance check interval stopped');
         }
       }
     }, 2000); // Check setiap 2 detik
@@ -202,22 +230,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }, 50);
     }
+    
+    if (shouldUpdate && balanceObserverAttached) {
+      const ready =
+        document.getElementById('balanceLRVal') &&
+        document.getElementById('balanceFBVal') &&
+        document.getElementById('balanceLRFill') &&
+        document.getElementById('balanceFBFill');
+      if (ready) {
+        balanceObserver.disconnect();
+        balanceObserverAttached = false;
+      }
+    }
   });
-  
-  // Mulai observe perubahan DOM setelah DOMContentLoaded
-  document.addEventListener('DOMContentLoaded', () => {
-    // Observe perubahan di document body
-    balanceObserver.observe(document.body, {
+  function attachBalanceObserver() {
+    if (balanceObserverAttached) {
+      return;
+    }
+    const panel = document.getElementById('panel-parameters');
+    if (!panel) {
+      setTimeout(attachBalanceObserver, 300);
+      return;
+    }
+    balanceObserver.observe(panel, {
       childList: true,
       subtree: true
     });
-    
-    // Mulai interval check setelah 3 detik (memberi waktu untuk DOM dimuat)
-    setTimeout(() => {
-      startBalanceCheckInterval();
-      console.log('[SitSense] Balance check interval started');
-    }, 3000);
-  });
+    balanceObserverAttached = true;
+  }
+  attachBalanceObserver();
+  
+  setTimeout(() => {
+    startBalanceCheckInterval();
+    console.log('[SitSense] Balance check interval started');
+  }, 3000);
 
   // =================================================================
   // 3. STATE MANAGEMENT

@@ -17,6 +17,12 @@
     <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
     <script src="https://unpkg.com/aos@2.3.4/dist/aos.js" defer></script>
 
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="./assets/js/firebase-config.js"></script>
+
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/theme.css" />
     <style>
@@ -189,154 +195,102 @@
       .floating-glow {
         animation: pulse-glow 3s ease-in-out infinite;
       }
+
+      nav[data-nav-shell] {
+        will-change: transform;
+      }
+      nav[data-nav-shell] [data-nav-surface] {
+        transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+      }
+      nav[data-nav-shell] [data-nav-inner] {
+        padding-top: 0.9rem;
+        padding-bottom: 0.9rem;
+        transition: padding 0.3s ease;
+      }
+      nav[data-nav-shell].nav-condensed {
+        transform: translateY(-10px);
+      }
+      nav[data-nav-shell].nav-condensed [data-nav-surface] {
+        background: rgba(8, 13, 30, 0.95);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 18px 45px rgba(5, 10, 25, 0.9);
+      }
+      nav[data-nav-shell].nav-condensed [data-nav-inner] {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+      }
     </style>
   </head>
   <body class="min-h-screen text-slate-100 bg-[#0b1220]">
     <!-- ================= NAVIGATION BAR ================= -->
-    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0b1220]/90 backdrop-blur-xl">
-      <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img data-image-base="logo-sitsense" alt="SitSense" class="h-8 w-auto" />
-          <span class="text-xl font-bold tracking-tight">SitSense</span>
+    <nav class="fixed top-0 left-0 right-0 z-50 transition-transform duration-500" data-nav-shell>
+      <div class="max-w-7xl mx-auto px-4 md:px-6 py-4">
+        <div class="relative rounded-3xl border border-white/10 bg-[#0b1220]/85 backdrop-blur-2xl shadow-[0_25px_60px_rgba(8,15,40,0.65)] transition-all duration-500" data-nav-surface>
+          <div class="absolute left-0 right-0 bottom-0 h-px overflow-hidden rounded-b-3xl bg-white/10">
+            <div data-scroll-progress class="h-full w-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-emerald-400 transition-[width] duration-300 ease-out"></div>
+          </div>
+          <div class="flex items-center gap-4 px-4 lg:px-6" data-nav-inner>
+            <a href="#jumbotron" class="flex items-center gap-3">
+              <img data-image-base="logo-sitsense" alt="SitSense" class="h-9 w-auto" />
+              <div>
+                <p class="text-lg font-bold tracking-tight">SitSense</p>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-400 hidden sm:block">Smart Posture</p>
+              </div>
+            </a>
+
+            <div class="hidden lg:flex items-center justify-center gap-1 flex-1 text-sm font-medium">
+              <a href="#jumbotron" class="px-4 py-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Beranda</a>
+              <a href="#features" class="px-4 py-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Fitur</a>
+              <a href="#solutions" class="px-4 py-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Solusi</a>
+              <a href="#for-teams" class="px-4 py-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Untuk Tim</a>
+              <a href="#for-developers" class="px-4 py-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Developer</a>
+              <a href="#contact" class="px-4 py-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors">Kontak</a>
+            </div>
+
+            <div class="hidden md:flex items-center gap-3">
+              <div data-auth-nav class="flex items-center gap-3 text-sm"></div>
+              <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-6 relative" id="launchAppBtn" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+                <span class="relative z-10" style="pointer-events: none;">Launch App</span>
+              </a>
+            </div>
+
+            <button type="button" class="md:hidden inline-flex items-center justify-center rounded-full border border-white/20 p-2 text-slate-200 hover:text-white hover:border-white/40 transition-colors" id="mobileNavToggle" aria-expanded="false" aria-controls="mobileNavMenu">
+              <i data-lucide="menu" class="h-5 w-5" data-icon="open"></i>
+              <i data-lucide="x" class="h-5 w-5 hidden" data-icon="close"></i>
+              <span class="visually-hidden">Toggle navigation</span>
+            </button>
+          </div>
+
+          <div id="mobileNavMenu" class="md:hidden px-4 pb-4 space-y-4 hidden">
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <a href="#jumbotron" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-2 hover:border-cyan-400/40 transition-colors">
+                <i data-lucide="home" class="h-4 w-4 text-cyan-300"></i>
+                <span>Beranda</span>
+              </a>
+              <a href="#features" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-2 hover:border-cyan-400/40 transition-colors">
+                <i data-lucide="sparkles" class="h-4 w-4 text-purple-300"></i>
+                <span>Fitur</span>
+              </a>
+              <a href="#solutions" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-2 hover:border-cyan-400/40 transition-colors">
+                <i data-lucide="layers" class="h-4 w-4 text-emerald-300"></i>
+                <span>Solusi</span>
+              </a>
+              <a href="#resources" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-2 hover:border-cyan-400/40 transition-colors">
+                <i data-lucide="library" class="h-4 w-4 text-sky-300"></i>
+                <span>Resource</span>
+              </a>
+            </div>
+
+            <a href="./index.html?launched=true" class="btn btn-gradient-primary w-full normal-case gap-2" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+              <i data-lucide="rocket" class="h-4 w-4"></i>
+              <span>Luncurkan Aplikasi</span>
+            </a>
+
+            <div data-auth-nav class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm"></div>
+          </div>
         </div>
-        <div class="hidden md:flex items-center gap-6">
-          <!-- Features Dropdown -->
-          <div class="relative group">
-            <a href="#features" class="text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer">
-              Features
-              <i data-lucide="chevron-down" class="h-4 w-4"></i>
-            </a>
-            <div class="absolute top-full left-0 mt-2 w-64 rounded-lg p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 pointer-events-none group-hover:pointer-events-auto bg-[#0b1220]/70 backdrop-blur-xl border border-white/20 shadow-2xl">
-              <div class="space-y-3">
-                <a href="#features" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="activity" class="h-5 w-5 text-cyan-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-cyan-300 transition-colors">Monitoring Real-time</div>
-                    <div class="text-xs text-slate-400">Pantau postur duduk Anda secara langsung dengan sensor cerdas</div>
-                  </div>
-                </a>
-                <a href="#features" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="sparkles" class="h-5 w-5 text-purple-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-purple-300 transition-colors">AI Recommendations</div>
-                    <div class="text-xs text-slate-400">Dapatkan saran personal dari AI untuk postur yang lebih baik</div>
-                  </div>
-                </a>
-                <a href="#features" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="bar-chart-2" class="h-5 w-5 text-emerald-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-emerald-300 transition-colors">Analytics Lengkap</div>
-                    <div class="text-xs text-slate-400">Lihat statistik dan riwayat postur Anda secara detail</div>
-                  </div>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Solutions Dropdown -->
-          <div class="relative group">
-            <a href="#solutions" class="text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer">
-              Solutions
-              <i data-lucide="chevron-down" class="h-4 w-4"></i>
-            </a>
-            <div class="absolute top-full left-0 mt-2 w-64 rounded-lg p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 pointer-events-none group-hover:pointer-events-auto bg-[#0b1220]/70 backdrop-blur-xl border border-white/20 shadow-2xl">
-              <div class="space-y-3">
-                <a href="#solutions" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="user" class="h-5 w-5 text-cyan-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-cyan-300 transition-colors">Untuk Individu</div>
-                    <div class="text-xs text-slate-400">Solusi personal untuk menjaga postur duduk sehat di rumah atau kantor</div>
-                  </div>
-                </a>
-                <a href="#solutions" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="users" class="h-5 w-5 text-purple-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-purple-300 transition-colors">Untuk Tim</div>
-                    <div class="text-xs text-slate-400">Kelola kesehatan postur seluruh tim dengan dashboard terpusat</div>
-                  </div>
-                </a>
-                <a href="#solutions" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="stethoscope" class="h-5 w-5 text-emerald-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-emerald-300 transition-colors">Untuk Klinik</div>
-                    <div class="text-xs text-slate-400">Solusi profesional untuk klinik fisioterapi dan kesehatan</div>
-                  </div>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Learn Dropdown -->
-          <div class="relative group">
-            <a href="#learn" class="text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer">
-              Learn
-              <i data-lucide="chevron-down" class="h-4 w-4"></i>
-            </a>
-            <div class="absolute top-full left-0 mt-2 w-64 rounded-lg p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 pointer-events-none group-hover:pointer-events-auto bg-[#0b1220]/70 backdrop-blur-xl border border-white/20 shadow-2xl">
-              <div class="space-y-3">
-                <a href="./help.html" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="book-open" class="h-5 w-5 text-cyan-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-cyan-300 transition-colors">Panduan Pengguna</div>
-                    <div class="text-xs text-slate-400">Pelajari cara menggunakan SitSense dengan efektif dari setup hingga interpretasi data</div>
-                  </div>
-                </a>
-                <a href="./about.html" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="graduation-cap" class="h-5 w-5 text-purple-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-purple-300 transition-colors">Tips Postur Sehat</div>
-                    <div class="text-xs text-slate-400">Pelajari teknik dan tips untuk menjaga postur duduk yang baik</div>
-                  </div>
-                </a>
-                <a href="#" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="video" class="h-5 w-5 text-emerald-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-emerald-300 transition-colors">Video Tutorial</div>
-                    <div class="text-xs text-slate-400">Tonton video tutorial step-by-step untuk memahami fitur-fitur SitSense</div>
-                  </div>
-                </a>
-                <a href="./help.html" class="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                  <div class="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="help-circle" class="h-5 w-5 text-yellow-300"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-sm mb-1 group-hover/item:text-yellow-300 transition-colors">FAQ</div>
-                    <div class="text-xs text-slate-400">Temukan jawaban untuk pertanyaan yang sering diajukan</div>
-                  </div>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <a href="#for-teams" class="text-slate-300 hover:text-cyan-300 transition-colors">For Teams</a>
-          <a href="#for-developers" class="text-slate-300 hover:text-cyan-300 transition-colors">For Developers</a>
-          <a href="#contact" class="text-slate-300 hover:text-cyan-300 transition-colors">Contact</a>
-        </div>
-        <div id="authNav" class="hidden md:flex items-center gap-3"></div>
-        <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-6 relative" id="launchAppBtn" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
-          <span class="relative z-10" style="pointer-events: none;">Launch App</span>
-        </a>
       </div>
     </nav>
-
     <!-- ================= JUMBOTRON SECTION ================= -->
     <section id="jumbotron" class="relative overflow-hidden py-20 md:py-32 flex items-center pt-24" data-aos="fade-up">
       <!-- Background gradient effect -->
@@ -933,10 +887,75 @@ const response = await fetch(
         if (window.AOS) AOS.init();
         if (window.lucide) {
           window.lucide.createIcons();
-          // Re-render icons after a short delay to ensure all are loaded
+          // Re-render icons setelah komponen ter-load
           setTimeout(() => {
             window.lucide.createIcons();
           }, 100);
+        }
+
+        const mobileToggle = document.getElementById('mobileNavToggle');
+        const mobileMenu = document.getElementById('mobileNavMenu');
+        if (mobileToggle && mobileMenu) {
+          const openIcon = mobileToggle.querySelector('[data-icon="open"]');
+          const closeIcon = mobileToggle.querySelector('[data-icon="close"]');
+
+          const setMenuState = (expanded) => {
+            mobileToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            mobileMenu.classList.toggle('hidden', !expanded);
+            if (openIcon && closeIcon) {
+              openIcon.classList.toggle('hidden', expanded);
+              closeIcon.classList.toggle('hidden', !expanded);
+            }
+          };
+
+          setMenuState(false);
+
+          mobileToggle.addEventListener('click', () => {
+            const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
+            setMenuState(!isExpanded);
+          });
+
+          mobileMenu.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => setMenuState(false));
+          });
+
+          window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
+              setMenuState(false);
+            }
+          });
+        }
+
+        const siteNav = document.querySelector('nav[data-nav-shell]');
+        const scrollProgress = siteNav?.querySelector('[data-scroll-progress]');
+        if (siteNav) {
+          let navTick = null;
+
+          const updateProgress = () => {
+            if (!scrollProgress) return;
+            const doc = document.documentElement;
+            const total = Math.max(doc.scrollHeight - window.innerHeight, 1);
+            const progress = Math.min(Math.max(window.scrollY / total, 0), 1);
+            scrollProgress.style.width = `${progress * 100}%`;
+          };
+
+          const applyNavState = () => {
+            const isScrolled = window.scrollY > 30;
+            siteNav.classList.toggle('nav-condensed', isScrolled);
+            updateProgress();
+          };
+
+          const requestNavUpdate = () => {
+            if (navTick !== null) return;
+            navTick = window.requestAnimationFrame(() => {
+              navTick = null;
+              applyNavState();
+            });
+          };
+
+          applyNavState();
+          window.addEventListener('scroll', requestNavUpdate, { passive: true });
+          window.addEventListener('resize', requestNavUpdate);
         }
       });
 
@@ -999,4 +1018,3 @@ const response = await fetch(
     </script>
   </body>
 </html>
-

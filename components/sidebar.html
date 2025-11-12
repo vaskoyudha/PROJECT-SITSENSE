@@ -20,44 +20,50 @@
       <p class="text-xs text-slate-400 mt-1 sidebar-subtitle">Smart Posture Monitor</p>
     </div>
 
-    <!-- Navigation Menu -->
-    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-      <a href="./home.html" data-nav="home" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="home" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Home</span>
-      </a>
-      <a href="./index.html" data-nav="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="layout-dashboard" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Dashboard</span>
-      </a>
-      <a href="./history.html" data-nav="history" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="history" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Riwayat</span>
-      </a>
-      <a href="./reports.html" data-nav="reports" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="file-text" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Laporan</span>
-      </a>
-      <a href="./settings.html" data-nav="settings" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="settings" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Pengaturan</span>
-      </a>
-      <a href="./about.html" data-nav="about" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="info" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Tentang</span>
-      </a>
-      <a href="./help.html" data-nav="help" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
-        <i data-lucide="help-circle" class="h-5 w-5 flex-shrink-0"></i>
-        <span class="font-medium sidebar-nav-text">Bantuan</span>
-      </a>
-    </nav>
+    <!-- Navigation Menu with custom scroll wheel -->
+    <div class="relative flex-1" data-sidebar-scroll-region>
+      <nav class="flex-1 p-4 pr-10 space-y-2 overflow-y-auto" data-sidebar-scroll>
+        <a href="./home.html" data-nav="home" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="home" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Home</span>
+        </a>
+        <a href="./index.html" data-nav="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="layout-dashboard" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Dashboard</span>
+        </a>
+        <a href="./history.html" data-nav="history" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="history" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Riwayat</span>
+        </a>
+        <a href="./reports.html" data-nav="reports" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="file-text" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Laporan</span>
+        </a>
+        <a href="./settings.html" data-nav="settings" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="settings" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Pengaturan</span>
+        </a>
+        <a href="./about.html" data-nav="about" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="info" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Tentang</span>
+        </a>
+        <a href="./help.html" data-nav="help" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+          <i data-lucide="help-circle" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="font-medium sidebar-nav-text">Bantuan</span>
+        </a>
+      </nav>
+      <div class="sidebar-scroll-wheel pointer-events-none" aria-hidden="true">
+        <span class="sidebar-scroll-wheel-track"></span>
+        <span class="sidebar-scroll-wheel-thumb" data-sidebar-scroll-thumb></span>
+      </div>
+    </div>
 
     <!-- Quick Actions -->
     <div class="p-4 border-t border-white/10 space-y-2">
-      <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
+      <a href="./profile.html" data-nav="profile" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
         <i data-lucide="user" class="h-5 w-5 flex-shrink-0"></i>
         <span class="font-medium sidebar-nav-text">Profil</span>
-      </button>
+      </a>
       <button id="themeToggleSidebar" onclick="window.SitSenseUI && SitSenseUI.toggleTheme()" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-cyan-300">
         <i data-lucide="sun" class="h-5 w-5 flex-shrink-0"></i>
         <span class="font-medium sidebar-nav-text">Tema</span>
@@ -74,4 +80,3 @@
 <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
 
 <!-- Script untuk toggle sidebar sudah dipindah ke assets/js/sidebar.js -->
-

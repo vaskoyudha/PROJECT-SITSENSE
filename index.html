@@ -144,34 +144,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-    <script>
-      // Inisialisasi Firebase langsung setelah SDK dimuat (seperti test connection)
-      (function() {
-        const firebaseConfig = {
-          apiKey: "AIzaSyCHpITmPUoKIb2niuh0G4vhJJJ0vBM2ijE",
-          authDomain: "esp32kursi-pintar.firebaseapp.com",
-          databaseURL: "https://esp32kursi-pintar-default-rtdb.firebaseio.com",
-          projectId: "esp32kursi-pintar",
-          storageBucket: "esp32kursi-pintar.appspot.com",
-          messagingSenderId: "265798521874",
-          appId: "1:265798521874:web:6097e5ae6ccf8ad683b4cb"
-        };
-        try {
-          if (!firebase.apps || firebase.apps.length === 0) {
-            firebase.initializeApp(firebaseConfig);
-          }
-          window.firebaseAuth = firebase.auth();
-          window.firebaseDb = firebase.database();
-          // Ekspos konfigurasi agar komponen lain bisa menggunakannya
-          window.FIREBASE_CONFIG = firebaseConfig;
-          // Opsional: set endpoint backend Anda di sini (atau biarkan null untuk menonaktifkan)
-          window.BACKEND_ENDPOINT = window.BACKEND_ENDPOINT || null; // contoh: '/api/monitoring'
-          console.log('[Firebase] Initialized in HTML');
-        } catch (e) {
-          console.error('[Firebase] Initialization error:', e);
-        }
-      })();
-    </script>
+    <script src="./assets/js/firebase-config.js"></script>
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

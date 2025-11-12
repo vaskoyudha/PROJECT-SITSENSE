@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SitSense — Profil</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind + DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons & helpers -->
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js" defer></script>
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+
+    <style>
+      body { font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif; }
+
+      .profile-hero {
+        background: radial-gradient(circle at 0% 0%, rgba(6, 182, 212, 0.2), transparent 45%),
+                    radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.25), transparent 40%),
+                    rgba(11, 18, 32, 0.85);
+      }
+
+      .badge-outline {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+      }
+
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1.25rem;
+        top: 0.5rem;
+        bottom: 0.5rem;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(34, 211, 238, 0.3), rgba(139, 92, 246, 0.3));
+      }
+
+      .timeline-item {
+        padding-left: 3rem;
+        position: relative;
+      }
+
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0.8rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+        box-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+      }
+
+      /* Header bar */
+      .profile-top-bar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: rgba(5, 8, 20, 0.95);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(18px);
+        padding: 1.25rem 0;
+        background: radial-gradient(circle at left top, rgba(6, 182, 212, 0.15), transparent 60%),
+                    radial-gradient(circle at right top, rgba(139, 92, 246, 0.15), transparent 55%),
+                    rgba(5, 11, 24, 0.92);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(18px);
+      }
+
+      .profile-top-shell {
+        max-width: 80rem;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .profile-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+      }
+
+      .profile-logo-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .profile-top-meta {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .status-chips {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 0.8rem;
+      }
+
+      .status-chip.accent {
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.35), rgba(139, 92, 246, 0.3));
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .profile-mini-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1.25rem;
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 150px;
+      }
+
+      .profile-mini-card__icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(99, 102, 241, 0.2));
+        box-shadow: 0 10px 18px rgba(8, 17, 37, 0.35);
+      }
+
+      .profile-mini-card__value {
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      .profile-top-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen text-slate-100 bg-[#050b18]">
+    <!-- ================= SIDEBAR ================= -->
+    <script src="./assets/js/sidebar.js"></script>
+    <div id="sidebar-slot"></div>
+    <script src="./assets/js/image-loader.js"></script>
+    <script>
+      (async () => {
+        const slot = document.getElementById('sidebar-slot');
+        slot.innerHTML = await (await fetch('./components/sidebar.html')).text();
+        if (window.lucide) window.lucide.createIcons();
+        if (window.ImageLoader?.initializeImages) {
+          setTimeout(() => window.ImageLoader.initializeImages(), 80);
+        }
+        if (window.SidebarManager?.markActiveNav) {
+          setTimeout(() => window.SidebarManager.markActiveNav(), 200);
+        }
+      })();
+    </script>
+
+    <!-- ================= HEADER ================= -->
+    <header class="profile-top-bar md:ml-64">
+      <div class="profile-top-shell">
+        <div class="profile-brand">
+          <button id="hamburgerMenu" class="md:hidden p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+            <i data-lucide="menu" class="h-5 w-5"></i>
+          </button>
+          <div class="profile-logo-pill">
+            <img data-image-base="logo-sitsense" alt="SitSense" class="h-7 w-auto" />
+            <div>
+              <p class="text-xs text-slate-400 uppercase tracking-[0.3em]">Dashboard</p>
+              <p class="text-lg font-semibold">Profil Saya</p>
+            </div>
+          </div>
+        </div>
+        <div class="profile-top-meta">
+          <span class="text-xs text-slate-400 inline-flex items-center gap-2 px-3 py-1 border border-white/10 rounded-full">
+            <i data-lucide="sparkles" class="h-4 w-4 text-cyan-200"></i>
+            Personalized posture insights
+          </span>
+          <div class="status-chips">
+            <span id="wifiStatus" class="status-chip">
+              <i data-lucide="wifi" class="h-4 w-4"></i>
+              <span class="hidden sm:inline">Wi‑Fi</span><span>—</span>
+            </span>
+            <span id="authStatus" class="status-chip">
+              <i data-lucide="user-check" class="h-4 w-4"></i>
+              <span class="hidden sm:inline">Auth</span><span>—</span>
+            </span>
+            <span class="status-chip">
+              <i data-lucide="clock" class="h-4 w-4"></i>
+              <time id="clock" class="hidden sm:inline">--:--:--</time>
+              <time id="clockShort" class="sm:hidden">--:--</time>
+            </span>
+          </div>
+        </div>
+        <div class="profile-top-actions">
+          <button type="button" onclick="window.SitSenseUI?.toggleTheme?.()" class="status-chip accent">
+            <i data-lucide="sun-moon" class="h-4 w-4"></i>
+            Mode
+          </button>
+          <div class="profile-mini-card">
+            <div class="profile-mini-card__icon">
+              <i data-lucide="flame" class="h-5 w-5 text-white"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Streak</p>
+              <p class="profile-mini-card__value text-cyan-200">14</p>
+            </div>
+          </div>
+          <div class="profile-mini-card">
+            <div class="profile-mini-card__icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(59,130,246,0.2));">
+              <i data-lucide="cpu" class="h-5 w-5 text-white"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">AI Mode</p>
+              <p class="profile-mini-card__value text-emerald-200 text-base">Adaptive</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- ================= MAIN ================= -->
+    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6 md:ml-64">
+      <!-- Hero -->
+      <section class="card glassy-card card-border profile-hero overflow-hidden" data-aos="fade-up">
+        <div class="card-body grid gap-8 md:grid-cols-2 relative">
+          <div>
+            <p class="badge-outline text-cyan-300 inline-flex items-center gap-2 mb-4">
+              <i data-lucide="sparkles" class="h-4 w-4"></i>
+              Profil Terverifikasi
+            </p>
+            <h1 class="text-3xl md:text-4xl font-bold leading-snug mb-4">
+              Halo, <span class="text-cyan-300">Vasko</span><br />
+              Mari pantau kebiasaan dudukmu hari ini.
+            </h1>
+            <p class="text-slate-300/80 max-w-xl">
+              SitSense mempersonalisasi rekomendasi postur, jadwal peregangan, dan insight kesehatan berdasarkan progres kamu.
+              Perbarui data diri, sesuaikan tujuan, dan nikmati coaching AI untuk performa terbaik.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button class="btn btn-gradient-primary normal-case gap-2">
+                <i data-lucide="wand-2" class="h-4 w-4"></i>
+                Sesuaikan Avatar
+              </button>
+              <button class="btn btn-gradient-outline normal-case gap-2">
+                <i data-lucide="download" class="h-4 w-4"></i>
+                Export Data
+              </button>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-3 text-xs text-slate-300">
+              <span class="badge-outline border-cyan-400/50 text-cyan-200">Streak 14 hari</span>
+              <span class="badge-outline border-emerald-400/50 text-emerald-200">AI Coach aktif</span>
+              <span class="badge-outline border-purple-400/50 text-purple-200">Premium+</span>
+            </div>
+          </div>
+          <div class="relative rounded-3xl border border-white/10 bg-white/5 p-6 flex flex-col gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-2xl font-semibold">
+                SR
+              </div>
+              <div>
+                <p class="text-sm text-slate-400">Member sejak 2022</p>
+                <p class="text-xl font-semibold">Vasko</p>
+                <p class="text-sm text-emerald-300 flex items-center gap-1">
+                  <i data-lucide="shield-check" class="h-4 w-4"></i>
+                  Verifikasi Multi-device aktif
+                </p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <p class="text-slate-400">Posture Score</p>
+                <p class="text-2xl font-bold text-cyan-300">86</p>
+                <p class="text-xs text-emerald-300 flex items-center gap-1">
+                  <i data-lucide="trending-up" class="h-3 w-3"></i>
+                  +4 vs minggu lalu
+                </p>
+              </div>
+              <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <p class="text-slate-400">Jam Fokus</p>
+                <p class="text-2xl font-bold text-purple-300">32</p>
+                <p class="text-xs text-slate-400">7 sesi pekan ini</p>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm text-slate-300 mb-2 flex items-center gap-2">
+                <i data-lucide="target" class="h-4 w-4 text-emerald-300"></i>
+                Target postur mingguan
+              </p>
+              <progress class="progress progress-info w-full" value="72" max="100"></progress>
+              <p class="text-xs text-slate-400 mt-1">72% tercapai · 6 sesi lagi untuk target penuh</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" data-aos="fade-up">
+        <article class="glassy-card card-border p-5 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-sm text-slate-400">
+            <span>Sesi selesai</span>
+            <i data-lucide="activity" class="h-4 w-4 text-cyan-300"></i>
+          </div>
+          <p class="text-3xl font-semibold">248</p>
+          <p class="text-xs text-emerald-300">+12 sesi dibanding bulan lalu</p>
+        </article>
+        <article class="glassy-card card-border p-5 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-sm text-slate-400">
+            <span>Durasi duduk rata-rata</span>
+            <i data-lucide="hourglass" class="h-4 w-4 text-purple-300"></i>
+          </div>
+          <p class="text-3xl font-semibold">47m</p>
+          <p class="text-xs text-emerald-300">5 menit lebih singkat</p>
+        </article>
+        <article class="glassy-card card-border p-5 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-sm text-slate-400">
+            <span>Energi & fokus</span>
+            <i data-lucide="battery-charging" class="h-4 w-4 text-emerald-300"></i>
+          </div>
+          <p class="text-3xl font-semibold">91%</p>
+          <p class="text-xs text-slate-400">Rata-rata rating refleksi harian</p>
+        </article>
+        <article class="glassy-card card-border p-5 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-sm text-slate-400">
+            <span>Badge aktif</span>
+            <i data-lucide="award" class="h-4 w-4 text-amber-300"></i>
+          </div>
+          <p class="text-3xl font-semibold">8</p>
+          <div class="flex gap-2 text-xs text-slate-400">
+            <span class="badge badge-outline border-cyan-400/40 text-cyan-200">Stabil</span>
+            <span class="badge badge-outline border-purple-400/40 text-purple-200">Mindful</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- Main layout -->
+      <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <!-- Left column -->
+        <div class="space-y-6 xl:col-span-2">
+          <article class="card glassy-card card-border" data-aos="fade-up">
+            <div class="card-body space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="card-title">Informasi Pribadi</h2>
+                <button class="btn btn-gradient-outline btn-sm normal-case">Simpan Perubahan</button>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="form-control">
+                  <span class="label-text mb-1">Nama Lengkap</span>
+                  <input type="text" class="input input-bordered bg-white/5 border-white/10" value="Siti Rahma" />
+                </label>
+                <label class="form-control">
+                  <span class="label-text mb-1">Email</span>
+                  <input type="email" class="input input-bordered bg-white/5 border-white/10" value="siti.rahma@sitsense.app" />
+                </label>
+                <label class="form-control">
+                  <span class="label-text mb-1">Nomor Ponsel</span>
+                  <input type="tel" class="input input-bordered bg-white/5 border-white/10" value="+62 812 5555 2121" />
+                </label>
+                <label class="form-control">
+                  <span class="label-text mb-1">Zona Waktu</span>
+                  <select class="select select-bordered bg-white/5 border-white/10">
+                    <option selected>WIB (UTC+7)</option>
+                    <option>WITA (UTC+8)</option>
+                    <option>WIT (UTC+9)</option>
+                  </select>
+                </label>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label class="form-control">
+                  <span class="label-text mb-1">Tinggi Badan</span>
+                  <input type="number" class="input input-bordered bg-white/5 border-white/10" value="165" />
+                </label>
+                <label class="form-control">
+                  <span class="label-text mb-1">Berat Badan</span>
+                  <input type="number" class="input input-bordered bg-white/5 border-white/10" value="58" />
+                </label>
+                <label class="form-control">
+                  <span class="label-text mb-1">Dominan</span>
+                  <select class="select select-bordered bg-white/5 border-white/10">
+                    <option>Tangan Kanan</option>
+                    <option>Tangan Kiri</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </article>
+
+          <article class="card glassy-card card-border" data-aos="fade-up">
+            <div class="card-body grid gap-6 md:grid-cols-2">
+              <div>
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold">Preferensi & Kebiasaan</h3>
+                  <span class="text-xs text-slate-400">Last sync 2m ago</span>
+                </div>
+                <div class="mt-4 space-y-3">
+                  <label class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                      <p class="font-medium">Pengingat Peregangan</p>
+                      <p class="text-xs text-slate-400">Setiap 45 menit</p>
+                    </div>
+                    <input type="checkbox" class="toggle toggle-info" checked />
+                  </label>
+                  <label class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                      <p class="font-medium">Mode Fokus Otomatis</p>
+                      <p class="text-xs text-slate-400">Aktif saat jam kerja</p>
+                    </div>
+                    <input type="checkbox" class="toggle toggle-info" checked />
+                  </label>
+                  <label class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                      <p class="font-medium">Notifikasi Mobile</p>
+                      <p class="text-xs text-slate-400">Push & email</p>
+                    </div>
+                    <input type="checkbox" class="toggle toggle-info" checked />
+                  </label>
+                  <label class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                      <p class="font-medium">Saran Nutrisi</p>
+                      <p class="text-xs text-slate-400">Tips hidrasi & camilan</p>
+                    </div>
+                    <input type="checkbox" class="toggle toggle-info" />
+                  </label>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-lg font-semibold">Tujuan Postur</h3>
+                  <button class="btn btn-xs btn-outline border-white/20">Edit</button>
+                </div>
+                <div class="space-y-4">
+                  <div>
+                    <div class="flex items-center justify-between text-sm">
+                      <p>Durasi Duduk Ideal</p>
+                      <span class="text-slate-400">40m / sesi</span>
+                    </div>
+                    <progress class="progress progress-info w-full" value="40" max="60"></progress>
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between text-sm">
+                      <p>Peregangan Harian</p>
+                      <span class="text-slate-400">6/8 sesi</span>
+                    </div>
+                    <progress class="progress progress-success w-full" value="75" max="100"></progress>
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between text-sm">
+                      <p>Latihan Nafas</p>
+                      <span class="text-slate-400">4/5 menit</span>
+                    </div>
+                    <progress class="progress progress-warning w-full" value="50" max="60"></progress>
+                  </div>
+                  <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm">
+                    <p class="font-semibold text-cyan-200">Rekomendasi AI</p>
+                    <p class="text-slate-200/80 mt-2">
+                      Tambahkan sesi mindful break 3 menit setelah 2 jam kerja untuk mempertahankan skor fokus di atas 90%.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Right column -->
+        <div class="space-y-6">
+          <article class="card glassy-card card-border" data-aos="fade-up">
+            <div class="card-body space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Keamanan & Login</h3>
+                <button class="btn btn-xs btn-gradient-outline normal-case">Kelola</button>
+              </div>
+              <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div>
+                    <p class="font-medium">Autentikasi 2 Faktor</p>
+                    <p class="text-xs text-slate-400">SMS & Authenticator</p>
+                  </div>
+                  <span class="badge badge-success badge-outline text-emerald-300 border-emerald-500/40">Aktif</span>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p class="font-medium">Sesi Aktif</p>
+                  <div class="mt-2 space-y-2 text-xs text-slate-400">
+                    <div class="flex items-center justify-between">
+                      <span class="flex items-center gap-2">
+                        <i data-lucide="monitor" class="h-4 w-4 text-cyan-300"></i>
+                        Macbook Studio · Chrome
+                      </span>
+                      <span>Online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="flex items-center gap-2">
+                        <i data-lucide="smartphone" class="h-4 w-4 text-purple-300"></i>
+                        Pixel 7 Pro · App
+                      </span>
+                      <button class="text-rose-300 hover:text-rose-200">Keluar</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p class="font-medium">Login Terakhir</p>
+                  <p class="text-xs text-slate-400 mt-1">09 Okt 2024 · 08:42 WIB · Bandung</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card glassy-card card-border" data-aos="fade-up">
+            <div class="card-body space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Perangkat Terhubung</h3>
+                <button class="btn btn-xs btn-gradient-outline normal-case">Tambah</button>
+              </div>
+              <div class="space-y-3 text-sm">
+                <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <div class="w-10 h-10 rounded-lg bg-cyan-400/10 flex items-center justify-center">
+                    <i data-lucide="tablet" class="h-5 w-5 text-cyan-300"></i>
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium">Sensor Kursi Alpha</p>
+                    <p class="text-xs text-slate-400">Firmware 3.2 · Battery 78%</p>
+                  </div>
+                  <span class="badge badge-success badge-outline text-emerald-300 border-emerald-500/40">Aktif</span>
+                </div>
+                <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <div class="w-10 h-10 rounded-lg bg-purple-400/10 flex items-center justify-center">
+                    <i data-lucide="watch" class="h-5 w-5 text-purple-300"></i>
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium">SitSense Wear</p>
+                    <p class="text-xs text-slate-400">Firmware 1.8 · Battery 52%</p>
+                  </div>
+                  <span class="badge badge-outline border-amber-400/40 text-amber-200">Siaga</span>
+                </div>
+                <div class="rounded-2xl border border-dashed border-white/20 p-4 text-center text-slate-400 text-xs">
+                  Hubungkan perangkat baru untuk otomatis mencatat sensor tekanan favoritmu.
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card glassy-card card-border" data-aos="fade-up">
+            <div class="card-body space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Aktivitas Terbaru</h3>
+                <button class="btn btn-xs btn-outline border-white/20">Lihat Semua</button>
+              </div>
+              <div class="timeline relative space-y-4">
+                <div class="timeline-item">
+                  <p class="text-sm font-medium">Rekomendasi AI diterapkan</p>
+                  <p class="text-xs text-slate-400">Regangkan bahu & leher · 5 menit</p>
+                  <span class="text-[11px] text-slate-500">10:12 · Hari ini</span>
+                </div>
+                <div class="timeline-item">
+                  <p class="text-sm font-medium">Skor postur meningkat</p>
+                  <p class="text-xs text-slate-400">+6 poin setelah sesi mindful</p>
+                  <span class="text-[11px] text-slate-500">Kemarin · 21:18</span>
+                </div>
+                <div class="timeline-item">
+                  <p class="text-sm font-medium">Perangkat baru disambungkan</p>
+                  <p class="text-xs text-slate-400">SitSense Wear</p>
+                  <span class="text-[11px] text-slate-500">08 Okt · 13:02</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Badges & planner -->
+      <section class="grid grid-cols-1 xl:grid-cols-3 gap-6" data-aos="fade-up">
+        <article class="card glassy-card card-border xl:col-span-2">
+          <div class="card-body space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold">Planner Harian</h3>
+              <span class="text-xs text-slate-400">WIB · 11 Oktober</span>
+            </div>
+            <div class="grid gap-3 md:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p class="text-xs text-slate-400">09:00</p>
+                <p class="font-semibold">Sesi Fokus 1</p>
+                <p class="text-xs text-slate-400">Auto mute notifikasi · 45 menit</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p class="text-xs text-slate-400">11:00</p>
+                <p class="font-semibold">Stretch & Walk</p>
+                <p class="text-xs text-slate-400">Tekukan punggung + jalan 200m</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p class="text-xs text-slate-400">14:30</p>
+                <p class="font-semibold">Mindful Break</p>
+                <p class="text-xs text-slate-400">Latihan nafas 4-7-8</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p class="text-xs text-slate-400">17:00</p>
+                <p class="font-semibold">Rekap Postur</p>
+                <p class="text-xs text-slate-400">Analisis pola + catatan</p>
+              </div>
+            </div>
+            <button class="btn btn-gradient-primary normal-case w-full md:w-auto">
+              <i data-lucide="calendar-plus" class="h-4 w-4"></i>
+              Tambah Aktivitas
+            </button>
+          </div>
+        </article>
+
+        <article class="card glassy-card card-border">
+          <div class="card-body space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold">Badge & Pencapaian</h3>
+              <button class="btn btn-xs btn-outline border-white/20">Kelola</button>
+            </div>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <div class="w-12 h-12 rounded-full bg-cyan-400/20 flex items-center justify-center">
+                  <i data-lucide="shield-check" class="h-5 w-5 text-cyan-200"></i>
+                </div>
+                <div>
+                  <p class="font-semibold">Guardian of Spine</p>
+                  <p class="text-xs text-slate-400">Menjaga postur prima selama 30 hari</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <div class="w-12 h-12 rounded-full bg-purple-400/20 flex items-center justify-center">
+                  <i data-lucide="heart-pulse" class="h-5 w-5 text-purple-200"></i>
+                </div>
+                <div>
+                  <p class="font-semibold">Mindful Master</p>
+                  <p class="text-xs text-slate-400">Mencapai 10 sesi mindful break</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 rounded-2xl border border-dashed border-white/20 p-4 text-slate-400 text-xs">
+                Jalankan rencana hari ini untuk membuka badge <span class="text-cyan-200 font-semibold ml-1">Flow State</span>.
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="border-t border-white/10 py-6">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 text-sm text-slate-400 flex flex-wrap items-center justify-between gap-2">
+        <p>© <span class="text-slate-200 font-medium">SitSense</span> — Project IoT</p>
+        <p>Profil Pengguna</p>
+      </div>
+    </footer>
+
+    <!-- ================= Scripts ================= -->
+    <script src="./assets/js/ui.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.AOS) AOS.init();
+        if (window.lucide) window.lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

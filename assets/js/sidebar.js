@@ -81,6 +81,9 @@ window.SidebarManager = {
       
       // Bind hamburger menu (mobile)
       this.bindHamburger();
+
+      // Custom scroll wheel indicator
+      this.initScrollWheel();
       
       // Bind close button
       if (this.closeBtn) {
@@ -186,6 +189,44 @@ window.SidebarManager = {
       bindFunc();
       setTimeout(bindFunc, 100);
       setTimeout(bindFunc, 500);
+    },
+
+    initScrollWheel: function() {
+      const region = this.sidebar?.querySelector('[data-sidebar-scroll-region]');
+      const scrollArea = this.sidebar?.querySelector('[data-sidebar-scroll]');
+      const thumb = this.sidebar?.querySelector('[data-sidebar-scroll-thumb]');
+      if (!region || !scrollArea || !thumb) {
+        return;
+      }
+
+      let ticking = false;
+
+      const applyState = () => {
+        ticking = false;
+        const maxScroll = Math.max(scrollArea.scrollHeight - scrollArea.clientHeight, 0);
+        const progress = maxScroll > 0 ? scrollArea.scrollTop / maxScroll : 0;
+        thumb.style.setProperty('--thumb-progress', progress || 0);
+
+        const canScrollUp = scrollArea.scrollTop > 4;
+        const canScrollDown = scrollArea.scrollTop < (maxScroll - 4);
+        const isScrollable = maxScroll > 2;
+
+        region.classList.toggle('is-scrollable', isScrollable);
+        region.classList.toggle('scrollable-up', isScrollable && canScrollUp);
+        region.classList.toggle('scrollable-down', isScrollable && canScrollDown);
+      };
+
+      const requestState = () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(applyState);
+        }
+      };
+
+      scrollArea.addEventListener('scroll', requestState, { passive: true });
+      window.addEventListener('resize', requestState);
+      requestState();
+      setTimeout(requestState, 150);
     },
     
     toggleCollapse: function() {
@@ -399,9 +440,12 @@ window.SidebarManager = {
               case 'dashboard':
                 isActive = file === 'index.html' || file === '' || path.endsWith('/');
                 break;
-              case 'history':
-                isActive = file === 'history.html';
-                break;
+            case 'history':
+              isActive = file === 'history.html';
+              break;
+            case 'profile':
+              isActive = file === 'profile.html';
+              break;
               case 'reports':
                 isActive = file === 'reports.html';
                 break;
@@ -429,6 +473,9 @@ window.SidebarManager = {
               break;
             case 'history':
               isActive = file === 'history.html' || href.includes('history.html');
+              break;
+            case 'profile':
+              isActive = file === 'profile.html' || href.includes('profile.html');
               break;
             case 'reports':
               isActive = file === 'reports.html' || href.includes('reports.html');
