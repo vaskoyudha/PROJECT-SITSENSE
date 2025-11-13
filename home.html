@@ -232,6 +232,64 @@
   border: 1px dashed rgba(255, 255, 255, 0.25);
   background: rgba(255,255,255,0.03);
 }
+
+/* IoT Detail Slide layout */
+#iotDetailViewport {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding-bottom: 0.5rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  width: 100%;
+}
+#iotDetailViewport::-webkit-scrollbar {
+  display: none;
+}
+#iotDetailTrack {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+.iot-detail-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.iot-detail-slide-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: center;
+  padding: 0 0.5rem;
+}
+@media (max-width: 1024px) {
+  .iot-detail-slide-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+.iot-detail-progress {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.iot-detail-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.iot-detail-progress-dot.active {
+  background: rgba(34, 211, 238, 0.8);
+  width: 24px;
+  border-radius: 4px;
+}
 .iot-gradient-pill {
   display: inline-flex;
   align-items: center;
@@ -265,6 +323,134 @@
       nav[data-nav-shell].nav-condensed [data-nav-inner] {
         padding-top: 0.6rem;
         padding-bottom: 0.6rem;
+      }
+      
+      /* Enhanced animations for home page */
+      @keyframes float-smooth {
+        0%, 100% {
+          transform: translateY(0px) translateX(0px) rotate(0deg);
+        }
+        33% {
+          transform: translateY(-25px) translateX(15px) rotate(5deg);
+        }
+        66% {
+          transform: translateY(15px) translateX(-15px) rotate(-5deg);
+        }
+      }
+      
+      @keyframes glow-pulse {
+        0%, 100% {
+          opacity: 0.4;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.8;
+          transform: scale(1.05);
+        }
+      }
+      
+      .floating-element {
+        animation: float-smooth 8s ease-in-out infinite;
+      }
+      
+      .floating-glow {
+        animation: glow-pulse 4s ease-in-out infinite;
+      }
+      
+      /* Smooth section transitions */
+      section {
+        scroll-margin-top: 100px;
+      }
+      
+      /* Enhanced card hover effects */
+      .glassy-card {
+        background: linear-gradient(155deg, rgba(11, 18, 34, 0.95) 0%, rgba(6, 11, 22, 0.98) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 18px 40px rgba(2, 6, 18, 0.55);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .glassy-card:nth-of-type(2n) {
+        background: linear-gradient(155deg, rgba(7, 12, 24, 0.95) 0%, rgba(13, 22, 41, 0.98) 100%);
+      }
+      
+      .glassy-card:hover {
+        transform: translateY(-4px) scale(1.02);
+      }
+      
+      .glassy-card.gradient-cyan {
+        background: linear-gradient(150deg, rgba(5, 18, 30, 0.95) 0%, rgba(6, 11, 22, 0.98) 55%, rgba(34, 211, 238, 0.14) 100%);
+        border-color: rgba(34, 211, 238, 0.25);
+        box-shadow: 0 20px 45px rgba(4, 27, 38, 0.55);
+      }
+      
+      .glassy-card.gradient-purple {
+        background: linear-gradient(150deg, rgba(11, 16, 32, 0.95) 0%, rgba(20, 14, 40, 0.98) 65%, rgba(168, 85, 247, 0.16) 100%);
+        border-color: rgba(168, 85, 247, 0.25);
+        box-shadow: 0 20px 45px rgba(21, 9, 34, 0.55);
+      }
+      
+      .glassy-card.gradient-emerald {
+        background: linear-gradient(150deg, rgba(6, 20, 20, 0.95) 0%, rgba(6, 18, 26, 0.98) 65%, rgba(16, 185, 129, 0.18) 100%);
+        border-color: rgba(16, 185, 129, 0.25);
+        box-shadow: 0 20px 45px rgba(4, 26, 18, 0.55);
+      }
+      
+      .glassy-card.gradient-amber {
+        background: linear-gradient(150deg, rgba(24, 18, 6, 0.92) 0%, rgba(25, 20, 8, 0.96) 60%, rgba(251, 191, 36, 0.16) 100%);
+        border-color: rgba(251, 191, 36, 0.25);
+        box-shadow: 0 20px 45px rgba(33, 24, 4, 0.55);
+      }
+      
+      .glassy-card.gradient-rose {
+        background: linear-gradient(150deg, rgba(28, 8, 16, 0.94) 0%, rgba(24, 7, 20, 0.98) 60%, rgba(244, 114, 182, 0.15) 100%);
+        border-color: rgba(244, 114, 182, 0.25);
+        box-shadow: 0 20px 45px rgba(30, 10, 24, 0.55);
+      }
+      
+      .glassy-card.gradient-violet {
+        background: linear-gradient(150deg, rgba(12, 10, 31, 0.95) 0%, rgba(21, 12, 38, 0.98) 60%, rgba(139, 92, 246, 0.16) 100%);
+        border-color: rgba(139, 92, 246, 0.25);
+        box-shadow: 0 20px 45px rgba(22, 10, 34, 0.55);
+      }
+      
+      .glassy-card.gradient-sky {
+        background: linear-gradient(150deg, rgba(6, 16, 32, 0.95) 0%, rgba(8, 20, 42, 0.98) 65%, rgba(56, 189, 248, 0.15) 100%);
+        border-color: rgba(56, 189, 248, 0.25);
+        box-shadow: 0 20px 45px rgba(8, 24, 42, 0.55);
+      }
+      
+      .glassy-card.gradient-indigo {
+        background: linear-gradient(150deg, rgba(12, 12, 32, 0.95) 0%, rgba(8, 15, 32, 0.98) 60%, rgba(99, 102, 241, 0.16) 100%);
+        border-color: rgba(99, 102, 241, 0.25);
+        box-shadow: 0 20px 45px rgba(9, 12, 34, 0.55);
+      }
+      
+      .glassy-card.gradient-slate {
+        background: linear-gradient(150deg, rgba(10, 14, 26, 0.95) 0%, rgba(6, 10, 20, 0.98) 70%, rgba(148, 163, 184, 0.12) 100%);
+        border-color: rgba(148, 163, 184, 0.25);
+        box-shadow: 0 20px 45px rgba(9, 14, 24, 0.55);
+      }
+      
+      .section-shell {
+        background-image:
+          radial-gradient(circle at 15% 25%, rgba(34, 211, 238, 0.08), transparent 45%),
+          radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.07), transparent 40%),
+          linear-gradient(160deg, #050a16 0%, #0c1528 55%, #040812 100%);
+      }
+      
+      .section-shell.section-shell--alt {
+        background-image:
+          radial-gradient(circle at 85% 20%, rgba(16, 185, 129, 0.08), transparent 45%),
+          radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.07), transparent 40%),
+          linear-gradient(160deg, #060c19 0%, #101c36 55%, #050a16 100%);
+      }
+      
+      /* Better text readability */
+      h1, h2, h3 {
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
     </style>
   </head>
@@ -339,15 +525,22 @@
       </div>
     </nav>
     <!-- ================= JUMBOTRON SECTION ================= -->
-    <section id="jumbotron" class="relative overflow-hidden py-20 md:py-32 flex items-center pt-24" data-aos="fade-up">
-      <!-- Background gradient effect -->
-      <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-emerald-500/20 pointer-events-none"></div>
-      <div class="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+    <section id="jumbotron" class="relative overflow-hidden flex items-center pt-20 md:pt-24 pb-10 md:pb-14 lg:pb-16 min-h-[calc(100vh-7rem)] md:min-h-[calc(100vh-8rem)] lg:min-h-[calc(100vh-9rem)]" data-aos="fade-up">
+      <!-- Enhanced Background gradient effect -->
+      <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/25 via-purple-500/20 to-emerald-500/25 pointer-events-none"></div>
+      <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+      <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" style="animation-delay: 1s;"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
       
-      <!-- Pattern overlay -->
-      <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 40px 40px;"></div>
+      <!-- Animated gradient orbs -->
+      <div class="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-cyan-400/20 to-purple-400/20 rounded-full blur-3xl pointer-events-none animate-pulse" style="animation-duration: 4s;"></div>
+      <div class="absolute bottom-20 left-20 w-72 h-72 bg-gradient-to-r from-emerald-400/20 to-cyan-400/20 rounded-full blur-3xl pointer-events-none animate-pulse" style="animation-duration: 5s; animation-delay: 0.5s;"></div>
+      
+      <!-- Enhanced Pattern overlay -->
+      <div class="absolute inset-0 opacity-[0.15] pointer-events-none" style="background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 50px 50px;"></div>
+      
+      <!-- Animated grid lines -->
+      <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: linear-gradient(rgba(34,211,238,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.3) 1px, transparent 1px); background-size: 60px 60px;"></div>
       
       <!-- Floating Decorative Elements -->
       <!-- Top Left Floating Icon -->
@@ -406,30 +599,50 @@
         </div>
       </div>
       
-      <div class="relative z-10 text-center max-w-4xl mx-auto w-full px-4 py-12">
-        <!-- Logo -->
-        <div class="mb-6 flex justify-center" data-aos="zoom-in" data-aos-delay="100">
-          <img data-image-base="logo-sitsense" alt="SitSense Logo" class="h-16 md:h-20 w-auto" />
+      <div class="relative z-10 text-center max-w-5xl mx-auto w-full px-4 py-16">
+        <!-- Logo with enhanced animation -->
+        <div class="mb-8 flex justify-center" data-aos="zoom-in" data-aos-delay="100">
+          <div class="relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-cyan-400/30 via-purple-400/30 to-emerald-400/30 rounded-full blur-2xl animate-pulse"></div>
+            <img data-image-base="logo-sitsense" alt="SitSense Logo" class="h-20 md:h-24 w-auto relative z-10 drop-shadow-2xl" />
+          </div>
         </div>
         
-        <!-- Main Heading -->
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-cyan-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent leading-tight" data-aos="fade-up" data-aos-delay="200">
-          Kesehatan Postur,<br/>Dilepaskan.
+        <!-- Enhanced Main Heading -->
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 bg-gradient-to-r from-cyan-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent leading-tight drop-shadow-lg" data-aos="fade-up" data-aos-delay="200">
+          <span class="block mb-2">Kesehatan Postur,</span>
+          <span class="block bg-gradient-to-r from-emerald-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent">Dilepaskan.</span>
         </h1>
         
-        <!-- Description -->
-        <p class="text-lg md:text-xl text-slate-300/90 mb-4 leading-relaxed max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="300">
+        <!-- Enhanced Description -->
+        <p class="text-xl md:text-2xl text-slate-200/95 mb-6 leading-relaxed max-w-3xl mx-auto font-light" data-aos="fade-up" data-aos-delay="300">
           Manfaatkan teknologi IoT cerdas dengan rangkaian alat monitoring unik untuk menjaga postur duduk Anda tetap optimal dan sehat sepanjang hari.
         </p>
         
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10" data-aos="fade-up" data-aos-delay="600">
-          <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-8 py-3 text-base font-semibold relative" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
-            <i data-lucide="rocket" class="h-5 w-5 mr-2 relative z-10" style="pointer-events: none;"></i>
+        <!-- Stats Preview -->
+        <div class="flex flex-wrap items-center justify-center gap-6 mb-10" data-aos="fade-up" data-aos-delay="400">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+            <i data-lucide="activity" class="h-5 w-5 text-cyan-300"></i>
+            <span class="text-sm text-slate-300">Real-time Monitoring</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+            <i data-lucide="sparkles" class="h-5 w-5 text-purple-300"></i>
+            <span class="text-sm text-slate-300">AI Powered</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+            <i data-lucide="shield-check" class="h-5 w-5 text-emerald-300"></i>
+            <span class="text-sm text-slate-300">Cloud Sync</span>
+          </div>
+        </div>
+        
+        <!-- Enhanced CTA Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-5 mt-12" data-aos="fade-up" data-aos-delay="600">
+          <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-10 py-4 text-lg font-semibold relative group" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+            <i data-lucide="rocket" class="h-5 w-5 mr-2 relative z-10 group-hover:animate-bounce" style="pointer-events: none;"></i>
             <span class="relative z-10" style="pointer-events: none;">Launch App</span>
           </a>
-          <a href="#features" class="btn btn-gradient-outline normal-case px-8 py-3 text-base font-semibold relative">
-            <i data-lucide="info" class="h-5 w-5 mr-2 relative z-10"></i>
+          <a href="#features" class="btn btn-gradient-outline normal-case px-10 py-4 text-lg font-semibold relative group">
+            <i data-lucide="info" class="h-5 w-5 mr-2 relative z-10 group-hover:rotate-180 transition-transform duration-500"></i>
             <span class="relative z-10">Pelajari Lebih Lanjut</span>
           </a>
         </div>
@@ -437,159 +650,226 @@
     </section>
 
     <!-- ================= FEATURES SECTION ================= -->
-    <section id="features" class="py-20 md:py-32 bg-[#0b1220]" data-aos="fade-up">
-      <div class="max-w-7xl mx-auto px-4 md:px-6">
-        <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+    <section id="features" class="section-shell py-24 md:py-36 relative overflow-hidden" data-aos="fade-up">
+      <!-- Section background effects -->
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none"></div>
+      <div class="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+        <div class="text-center mb-20">
+          <span class="inline-block px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-sm font-medium mb-6" data-aos="fade-up">
+            <i data-lucide="sparkles" class="h-4 w-4 inline mr-2"></i>
+            Fitur Canggih
+          </span>
+          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-cyan-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent" data-aos="fade-up" data-aos-delay="100">
             Fitur Unggulan
           </h2>
-          <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto">
-            Temukan berbagai fitur canggih yang membantu Anda menjaga postur duduk yang sehat
+          <p class="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+            Temukan berbagai fitur canggih yang membantu Anda menjaga postur duduk yang sehat dengan teknologi terdepan
           </p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-up" data-aos-delay="100">
-            <div class="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4">
-              <i data-lucide="activity" class="h-6 w-6 text-cyan-300"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="glassy-card gradient-cyan card-border p-8 hover:scale-105 transition-all duration-300 group relative overflow-hidden" data-aos="fade-up" data-aos-delay="100">
+            <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-cyan-500/20">
+                <i data-lucide="activity" class="h-7 w-7 text-cyan-300"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-white group-hover:text-cyan-300 transition-colors">Monitoring Real-time</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Pantau postur duduk Anda secara real-time dengan sensor tekanan cerdas yang akurat dan responsif.</p>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Monitoring Real-time</h3>
-            <p class="text-slate-400 text-sm">Pantau postur duduk Anda secara real-time dengan sensor tekanan cerdas yang akurat dan responsif.</p>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-up" data-aos-delay="200">
-            <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-              <i data-lucide="sparkles" class="h-6 w-6 text-purple-300"></i>
+          <div class="glassy-card gradient-purple card-border p-8 hover:scale-105 transition-all duration-300 group relative overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-600/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-purple-500/20">
+                <i data-lucide="sparkles" class="h-7 w-7 text-purple-300"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-white group-hover:text-purple-300 transition-colors">AI Recommendations</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Dapatkan rekomendasi personal dari AI berbasis Gemini untuk memperbaiki postur Anda.</p>
             </div>
-            <h3 class="text-xl font-semibold mb-2">AI Recommendations</h3>
-            <p class="text-slate-400 text-sm">Dapatkan rekomendasi personal dari AI berbasis Gemini untuk memperbaiki postur Anda.</p>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-up" data-aos-delay="300">
-            <div class="w-12 h-12 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-4">
-              <i data-lucide="bar-chart-2" class="h-6 w-6 text-emerald-300"></i>
+          <div class="glassy-card gradient-emerald card-border p-8 hover:scale-105 transition-all duration-300 group relative overflow-hidden" data-aos="fade-up" data-aos-delay="300">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/20">
+                <i data-lucide="bar-chart-2" class="h-7 w-7 text-emerald-300"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-white group-hover:text-emerald-300 transition-colors">Analytics Lengkap</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Akses statistik detail, riwayat sesi, dan laporan komprehensif tentang kebiasaan duduk Anda.</p>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Analytics Lengkap</h3>
-            <p class="text-slate-400 text-sm">Akses statistik detail, riwayat sesi, dan laporan komprehensif tentang kebiasaan duduk Anda.</p>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-up" data-aos-delay="400">
-            <div class="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center mb-4">
-              <i data-lucide="bell" class="h-6 w-6 text-yellow-300"></i>
+          <div class="glassy-card gradient-amber card-border p-8 hover:scale-105 transition-all duration-300 group relative overflow-hidden" data-aos="fade-up" data-aos-delay="400">
+            <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-yellow-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-500/30 to-yellow-600/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-yellow-500/20">
+                <i data-lucide="bell" class="h-7 w-7 text-yellow-300"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-white group-hover:text-yellow-300 transition-colors">Smart Alerts</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Notifikasi cerdas saat postur buruk terdeteksi atau durasi duduk melebihi ambang batas.</p>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Smart Alerts</h3>
-            <p class="text-slate-400 text-sm">Notifikasi cerdas saat postur buruk terdeteksi atau durasi duduk melebihi ambang batas.</p>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-up" data-aos-delay="500">
-            <div class="w-12 h-12 rounded-lg bg-rose-500/20 flex items-center justify-center mb-4">
-              <i data-lucide="volume-2" class="h-6 w-6 text-rose-300"></i>
+          <div class="glassy-card gradient-rose card-border p-8 hover:scale-105 transition-all duration-300 group relative overflow-hidden" data-aos="fade-up" data-aos-delay="500">
+            <div class="absolute inset-0 bg-gradient-to-br from-rose-500/0 to-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500/30 to-rose-600/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-rose-500/20">
+                <i data-lucide="volume-2" class="h-7 w-7 text-rose-300"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-white group-hover:text-rose-300 transition-colors">Text-to-Speech</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Dengarkan rekomendasi AI dengan suara natural menggunakan Google Text-to-Speech.</p>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Text-to-Speech</h3>
-            <p class="text-slate-400 text-sm">Dengarkan rekomendasi AI dengan suara natural menggunakan Google Text-to-Speech.</p>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-up" data-aos-delay="600">
-            <div class="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
-              <i data-lucide="cloud" class="h-6 w-6 text-violet-300"></i>
+          <div class="glassy-card gradient-violet card-border p-8 hover:scale-105 transition-all duration-300 group relative overflow-hidden" data-aos="fade-up" data-aos-delay="600">
+            <div class="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/30 to-violet-600/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-violet-500/20">
+                <i data-lucide="cloud" class="h-7 w-7 text-violet-300"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-white group-hover:text-violet-300 transition-colors">Cloud Sync</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Sinkronisasi data dengan Firebase untuk akses multi-device dan backup otomatis.</p>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Cloud Sync</h3>
-            <p class="text-slate-400 text-sm">Sinkronisasi data dengan Firebase untuk akses multi-device dan backup otomatis.</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ================= SOLUTIONS SECTION ================= -->
-    <section id="solutions" class="py-20 md:py-32 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5" data-aos="fade-up">
-      <div class="max-w-7xl mx-auto px-4 md:px-6">
-        <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+    <section id="solutions" class="section-shell section-shell--alt py-24 md:py-36 relative overflow-hidden" data-aos="fade-up">
+      <!-- Section background effects -->
+      <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/3 via-transparent to-emerald-500/3 pointer-events-none"></div>
+      
+      <div class="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+        <div class="text-center mb-20">
+          <span class="inline-block px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm font-medium mb-6" data-aos="fade-up">
+            <i data-lucide="layers" class="h-4 w-4 inline mr-2"></i>
+            Solusi Terpadu
+          </span>
+          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-cyan-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent" data-aos="fade-up" data-aos-delay="100">
             Solusi untuk Setiap Kebutuhan
           </h2>
-          <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto">
-            Dari individu hingga tim, temukan solusi yang tepat untuk Anda
+          <p class="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+            Dari individu hingga tim, temukan solusi yang tepat untuk Anda dengan teknologi yang dapat disesuaikan
           </p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="glassy-card card-border p-8 hover:border-cyan-400/50 transition-all" data-aos="fade-up" data-aos-delay="100">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-2xl font-bold">Untuk Individu</h3>
-              <i data-lucide="user" class="h-8 w-8 text-cyan-300"></i>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="glassy-card gradient-cyan card-border p-8 hover:border-cyan-400/50 transition-all group relative overflow-hidden hover:scale-105" data-aos="fade-up" data-aos-delay="100">
+            <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-2xl font-bold text-white group-hover:text-cyan-300 transition-colors">Untuk Individu</h3>
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-cyan-500/20">
+                <i data-lucide="user" class="h-6 w-6 text-cyan-300"></i>
+              </div>
             </div>
-            <p class="text-slate-400 mb-4">
+            <p class="text-slate-300 mb-6 leading-relaxed">
               Solusi personal untuk menjaga postur duduk sehat di rumah atau kantor. Pantau kebiasaan duduk Anda dan dapatkan insight untuk hidup yang lebih sehat.
             </p>
-            <ul class="space-y-2 text-sm text-slate-300">
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Monitoring real-time
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Monitoring real-time</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Rekomendasi AI personal
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Rekomendasi AI personal</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Dashboard analytics
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Dashboard analytics</span>
               </li>
             </ul>
+            </div>
           </div>
           
-          <div class="glassy-card card-border p-8 hover:border-purple-400/50 transition-all" data-aos="fade-up" data-aos-delay="200">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-2xl font-bold">Untuk Tim</h3>
-              <i data-lucide="users" class="h-8 w-8 text-purple-300"></i>
+          <div class="glassy-card gradient-purple card-border p-8 hover:border-purple-400/50 transition-all group relative overflow-hidden hover:scale-105" data-aos="fade-up" data-aos-delay="200">
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors">Untuk Tim</h3>
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-600/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-purple-500/20">
+                <i data-lucide="users" class="h-6 w-6 text-purple-300"></i>
+              </div>
             </div>
-            <p class="text-slate-400 mb-4">
+            <p class="text-slate-300 mb-6 leading-relaxed">
               Kelola kesehatan postur seluruh tim dengan dashboard terpusat. Pantau statistik tim dan tingkatkan produktivitas dengan postur yang lebih baik.
             </p>
-            <ul class="space-y-2 text-sm text-slate-300">
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Multi-user management
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Multi-user management</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Team analytics
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Team analytics</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Customizable alerts
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Customizable alerts</span>
               </li>
             </ul>
+            </div>
           </div>
           
-          <div class="glassy-card card-border p-8 hover:border-emerald-400/50 transition-all" data-aos="fade-up" data-aos-delay="300">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-2xl font-bold">Untuk Klinik</h3>
-              <i data-lucide="stethoscope" class="h-8 w-8 text-emerald-300"></i>
+          <div class="glassy-card gradient-emerald card-border p-8 hover:border-emerald-400/50 transition-all group relative overflow-hidden hover:scale-105" data-aos="fade-up" data-aos-delay="300">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative z-10">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-2xl font-bold text-white group-hover:text-emerald-300 transition-colors">Untuk Klinik</h3>
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/20">
+                <i data-lucide="stethoscope" class="h-6 w-6 text-emerald-300"></i>
+              </div>
             </div>
-            <p class="text-slate-400 mb-4">
+            <p class="text-slate-300 mb-6 leading-relaxed">
               Solusi profesional untuk klinik fisioterapi dan kesehatan. Pantau progress pasien dan berikan rekomendasi berbasis data.
             </p>
-            <ul class="space-y-2 text-sm text-slate-300">
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Patient tracking
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Patient tracking</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Progress reports
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Progress reports</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
-                Export data
+              <li class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="check" class="h-3 w-3 text-emerald-400"></i>
+                </div>
+                <span>Export data</span>
               </li>
             </ul>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ================= LEARN SECTION ================= -->
-    <section id="learn" class="py-20 md:py-32 bg-[#0b1220]" data-aos="fade-up">
+    <section id="learn" class="section-shell py-20 md:py-32" data-aos="fade-up">
       <div class="max-w-7xl mx-auto px-4 md:px-6">
         <div class="text-center mb-16">
           <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
@@ -601,7 +881,7 @@
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-right">
+          <div class="glassy-card gradient-cyan card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-right">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
                 <i data-lucide="book-open" class="h-6 w-6 text-cyan-300"></i>
@@ -618,7 +898,7 @@
             </div>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-left">
+          <div class="glassy-card gradient-purple card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-left">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
                 <i data-lucide="graduation-cap" class="h-6 w-6 text-purple-300"></i>
@@ -635,7 +915,7 @@
             </div>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-right">
+          <div class="glassy-card gradient-emerald card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-right">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
                 <i data-lucide="video" class="h-6 w-6 text-emerald-300"></i>
@@ -652,7 +932,7 @@
             </div>
           </div>
           
-          <div class="glassy-card card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-left">
+          <div class="glassy-card gradient-amber card-border p-6 hover:scale-105 transition-transform duration-300" data-aos="fade-left">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
                 <i data-lucide="help-circle" class="h-6 w-6 text-yellow-300"></i>
@@ -673,7 +953,7 @@
     </section>
 
     <!-- ================= FOR TEAMS SECTION ================= -->
-    <section id="for-teams" class="py-20 md:py-32 bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5" data-aos="fade-up">
+    <section id="for-teams" class="section-shell section-shell--alt py-20 md:py-32" data-aos="fade-up">
       <div class="max-w-7xl mx-auto px-4 md:px-6">
         <div class="max-w-4xl mx-auto">
           <div class="text-center mb-16">
@@ -685,7 +965,7 @@
             </p>
           </div>
           
-          <div class="glassy-card card-border p-8 md:p-12">
+          <div class="glassy-card gradient-purple card-border p-8 md:p-12">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div>
                 <h3 class="text-3xl font-bold mb-4">Kolaborasi Tanpa Batas</h3>
@@ -715,19 +995,19 @@
                 </a>
               </div>
               <div class="grid grid-cols-2 gap-4">
-                <div class="glassy-card card-border p-4 text-center">
+                <div class="glassy-card gradient-cyan card-border p-4 text-center">
                   <div class="text-3xl font-bold text-cyan-300 mb-2">100+</div>
                   <div class="text-xs text-slate-400">Tim Aktif</div>
                 </div>
-                <div class="glassy-card card-border p-4 text-center">
+                <div class="glassy-card gradient-purple card-border p-4 text-center">
                   <div class="text-3xl font-bold text-purple-300 mb-2">50K+</div>
                   <div class="text-xs text-slate-400">Data Points</div>
                 </div>
-                <div class="glassy-card card-border p-4 text-center">
+                <div class="glassy-card gradient-emerald card-border p-4 text-center">
                   <div class="text-3xl font-bold text-emerald-300 mb-2">98%</div>
                   <div class="text-xs text-slate-400">Kepuasan</div>
                 </div>
-                <div class="glassy-card card-border p-4 text-center">
+                <div class="glassy-card gradient-amber card-border p-4 text-center">
                   <div class="text-3xl font-bold text-yellow-300 mb-2">24/7</div>
                   <div class="text-xs text-slate-400">Support</div>
                 </div>
@@ -739,7 +1019,7 @@
     </section>
 
     <!-- ================= FOR DEVELOPERS SECTION ================= -->
-    <section id="for-developers" class="py-20 md:py-32 bg-[#0b1220]" data-aos="fade-up">
+    <section id="for-developers" class="section-shell py-20 md:py-32" data-aos="fade-up">
       <div class="max-w-7xl mx-auto px-4 md:px-6">
         <div class="max-w-4xl mx-auto">
           <div class="text-center mb-16">
@@ -751,7 +1031,7 @@
             </p>
           </div>
           
-          <div class="glassy-card card-border p-8 md:p-12">
+          <div class="glassy-card gradient-sky card-border p-8 md:p-12">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div class="order-2 md:order-1">
                 <div class="bg-[#0b1220] rounded-lg p-4 mb-4 border border-white/10">
@@ -811,7 +1091,7 @@ const response = await fetch(
     </section>
 
     <!-- ================= IOT SHOWCASE SECTION ================= -->
-    <section id="iot-showcase" class="py-20 md:py-32 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5" data-aos="fade-up">
+    <section id="iot-showcase" class="section-shell section-shell--alt py-20 md:py-32" data-aos="fade-up">
       <div class="max-w-7xl mx-auto px-4 md:px-6 space-y-16">
         <div class="text-center max-w-3xl mx-auto">
           <span class="inline-flex items-center gap-2 text-xs tracking-[0.4em] text-cyan-300 uppercase mb-4">
@@ -826,7 +1106,7 @@ const response = await fetch(
           </p>
         </div>
 
-        <div class="glassy-card card-border p-8 md:p-12">
+        <div class="glassy-card gradient-emerald card-border p-8 md:p-12">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <!-- Left: Stepper explanation -->
             <div class="space-y-8">
@@ -870,15 +1150,11 @@ const response = await fetch(
                 </div>
               </div>
 
-              <div class="flex items-center justify-between pt-4 border-t border-white/5">
+              <div class="pt-4 border-t border-white/5">
                 <div>
                   <p class="text-xs uppercase tracking-[0.4em] text-slate-500">integrasi lengkap</p>
                   <p class="text-2xl font-semibold text-slate-100">Sensor → Cloud → Dashboard</p>
                 </div>
-                <button class="btn btn-gradient-outline normal-case gap-2" id="iotNextBtn">
-                  Selanjutnya
-                  <i data-lucide="arrow-right" class="h-4 w-4"></i>
-                </button>
               </div>
             </div>
 
@@ -897,6 +1173,186 @@ const response = await fetch(
                 <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                 <p>Foto gateway cloud / server rack</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= IOT DETAIL SLIDES SECTION ================= -->
+        <div class="space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-500">Detail Integrasi</p>
+              <h3 class="text-2xl font-semibold text-slate-100">Pemaparan Detail Komponen</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="iotDetailPrev" class="btn btn-sm btn-outline border-white/20 text-slate-200 normal-case">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+              </button>
+              <button id="iotDetailNext" class="btn btn-sm btn-gradient-outline normal-case gap-2">
+                Selanjutnya
+                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="glassy-card gradient-indigo card-border p-8 md:p-12">
+            <div id="iotDetailViewport">
+              <div id="iotDetailTrack">
+                <!-- Slide 1: Sensor Tekanan Kursi -->
+                <div class="iot-detail-slide">
+                  <div class="iot-detail-slide-content">
+                    <div class="space-y-6">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-400/40">
+                          <span class="font-semibold text-cyan-200 text-lg">1</span>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-semibold">Sensor Tekanan Kursi</h3>
+                      </div>
+                      <div class="space-y-4">
+                        <p class="text-slate-300 leading-relaxed">
+                          Panel sensor piezo-elektrik yang dirancang khusus untuk mendeteksi distribusi berat tubuh secara real-time. Sensor ini mampu membaca perubahan tekanan pada berbagai titik di permukaan dudukan kursi.
+                        </p>
+                        <div class="space-y-3">
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Mengirimkan data matrix tekanan dengan resolusi tinggi untuk analisis postur yang akurat</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Ideal untuk memantau postur duduk menit demi menit tanpa gangguan</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Mendeteksi pergeseran berat badan yang mengindikasikan postur tidak ideal</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                      <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                      <p>Foto modul sensor tekanan</p>
+                      <p class="text-xs">(drag & drop nanti)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Slide 2: NodeMCU / ESP32 Gateway -->
+                <div class="iot-detail-slide">
+                  <div class="iot-detail-slide-content">
+                    <div class="space-y-6">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-400/40">
+                          <span class="font-semibold text-emerald-200 text-lg">2</span>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-semibold">NodeMCU / ESP32 Gateway</h3>
+                      </div>
+                      <div class="space-y-4">
+                        <p class="text-slate-300 leading-relaxed">
+                          Microcontroller ESP32 yang berfungsi sebagai gateway komunikasi antara sensor dan cloud. Mengintegrasikan berbagai protokol komunikasi untuk transmisi data yang aman dan efisien.
+                        </p>
+                        <div class="space-y-3">
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Menggabungkan Wi‑Fi, BLE, dan ADC dalam satu chip yang powerful</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Data sensor langsung ditransmisikan ke cloud SitSense dengan enkripsi TLS</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Mendukung OTA (Over-The-Air) updates untuk pembaruan firmware tanpa kabel</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                      <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                      <p>Foto NodeMCU / ESP32</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Slide 3: Gateway Cloud & AI Engine -->
+                <div class="iot-detail-slide">
+                  <div class="iot-detail-slide-content">
+                    <div class="space-y-6">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/40">
+                          <span class="font-semibold text-purple-200 text-lg">3</span>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-semibold">Gateway Cloud & AI Engine</h3>
+                      </div>
+                      <div class="space-y-4">
+                        <p class="text-slate-300 leading-relaxed">
+                          Backend cloud yang dilengkapi dengan mesin AI untuk menganalisis data postur secara real-time. Menggunakan machine learning model yang terus belajar untuk memberikan rekomendasi yang semakin akurat.
+                        </p>
+                        <div class="space-y-3">
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Machine learning posture model menganalisis data untuk menghasilkan skor postur</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Rekomendasi personal dari Gemini AI berdasarkan pola duduk pengguna</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Pengingat adaptif yang menyesuaikan dengan jadwal dan kebiasaan pengguna</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                      <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                      <p>Foto gateway cloud / server rack</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Slide 4: Dashboard & Alert Layer -->
+                <div class="iot-detail-slide">
+                  <div class="iot-detail-slide-content">
+                    <div class="space-y-6">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-400/40">
+                          <span class="font-semibold text-amber-200 text-lg">4</span>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-semibold">Dashboard & Alert Layer</h3>
+                      </div>
+                      <div class="space-y-4">
+                        <p class="text-slate-300 leading-relaxed">
+                          Interface pengguna yang menampilkan data postur secara real-time dengan visualisasi yang intuitif. Dilengkapi dengan sistem notifikasi yang membantu pengguna menjaga postur duduk yang sehat.
+                        </p>
+                        <div class="space-y-3">
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">UI SitSense merender data secara realtime dengan update setiap detik</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Notifikasi cerdas yang muncul saat postur keluar dari batas ideal</p>
+                          </div>
+                          <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-slate-400 text-sm">Pembaruan streak dan statistik untuk memotivasi kebiasaan duduk sehat</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                      <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
+                      <p>Foto dashboard UI SitSense</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="iot-detail-progress" id="iotDetailProgress">
+              <div class="iot-detail-progress-dot active" data-slide="0"></div>
+              <div class="iot-detail-progress-dot" data-slide="1"></div>
+              <div class="iot-detail-progress-dot" data-slide="2"></div>
+              <div class="iot-detail-progress-dot" data-slide="3"></div>
             </div>
           </div>
         </div>
@@ -920,7 +1376,7 @@ const response = await fetch(
 
           <div id="iotCardViewport">
             <div id="iotCardTrack">
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-cyan card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Sensor FSR pada dudukan kursi
@@ -929,7 +1385,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Menangkap distribusi berat tubuh di dudukan untuk mendeteksi shifting postur yang terlalu condong.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-purple card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Sensor Ultrasonik / Infrared sandaran
@@ -938,7 +1394,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Membaca jarak punggung dengan sandaran untuk mendeteksi forward head posture dan membungkuk.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-emerald card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Modul ESP32 / NodeMCU
@@ -947,7 +1403,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Menggabungkan Wi‑Fi, BLE, dan ADC sehingga seluruh sensor diproses dan dikirim ke cloud secara aman.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-rose card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   DF Player Mini + speaker
@@ -956,7 +1412,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Memberi peringatan suara personal ketika postur keluar dari batas ideal sehingga pengguna langsung aware.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-amber card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Buzzer module
@@ -965,7 +1421,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Tambahan feedback audio/visual berintensitas rendah agar pengguna dapat melakukan koreksi cepat.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-sky card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Push button kalibrasi
@@ -974,7 +1430,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Memungkinkan pengguna menentukan baseline postur ideal mereka sebelum sesi monitoring dimulai.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-indigo card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Breadboard dan jumper
@@ -983,7 +1439,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Memudahkan prototyping tanpa solder sehingga sensor bisa dikonfigurasi ulang sesuai eksperimen.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-violet card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Kursi & layout sensor
@@ -992,7 +1448,7 @@ const response = await fetch(
                 <p class="text-sm text-slate-400">Kursi ergonomis menjadi platform utama penempatan sensor, memastikan pembacaan sesuai anatomi pengguna.</p>
               </article>
 
-              <article class="iot-card glassy-card card-border p-6">
+              <article class="iot-card glassy-card gradient-slate card-border p-6">
                 <div class="h-32 rounded-2xl border border-dashed border-white/30 bg-white/5 mb-4 flex flex-col items-center justify-center text-xs text-slate-400">
                   <span class="text-xs tracking-[0.3em] uppercase text-slate-500 mb-2">Image Placeholder</span>
                   Kabel USB-C
@@ -1007,7 +1463,7 @@ const response = await fetch(
     </section>
 
     <!-- ================= CONTACT SECTION ================= -->
-    <section id="contact" class="py-20 md:py-32 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5" data-aos="fade-up">
+    <section id="contact" class="section-shell py-20 md:py-32" data-aos="fade-up">
       <div class="max-w-7xl mx-auto px-4 md:px-6">
         <div class="max-w-4xl mx-auto">
           <div class="text-center mb-16">
@@ -1020,7 +1476,7 @@ const response = await fetch(
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="glassy-card card-border p-6 text-center">
+            <div class="glassy-card gradient-cyan card-border p-6 text-center">
               <div class="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="mail" class="h-8 w-8 text-cyan-300"></i>
               </div>
@@ -1031,7 +1487,7 @@ const response = await fetch(
               </a>
             </div>
             
-            <div class="glassy-card card-border p-6 text-center">
+            <div class="glassy-card gradient-purple card-border p-6 text-center">
               <div class="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="message-circle" class="h-8 w-8 text-purple-300"></i>
               </div>
@@ -1043,7 +1499,7 @@ const response = await fetch(
             </div>
           </div>
           
-          <div class="glassy-card card-border p-8">
+          <div class="glassy-card gradient-emerald card-border p-8">
             <h3 class="text-2xl font-semibold mb-4 text-center">Kirim Pesan</h3>
             <form class="space-y-4">
               <div>
@@ -1122,12 +1578,6 @@ const response = await fetch(
     <script src="./assets/js/image-loader.js"></script>
     <script src="./assets/js/auth.js"></script>
     <script>
-      document.getElementById('iotNextBtn')?.addEventListener('click', () => {
-        const target = document.getElementById('contact');
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
       const viewport = document.getElementById('iotCardViewport');
       const prev = document.getElementById('iotPrevCards');
       const next = document.getElementById('iotNextCards');
@@ -1138,6 +1588,68 @@ const response = await fetch(
       };
       prev?.addEventListener('click', () => scrollCards(-1));
       next?.addEventListener('click', () => scrollCards(1));
+
+      // IoT Detail Slides Navigation
+      const detailViewport = document.getElementById('iotDetailViewport');
+      const detailPrev = document.getElementById('iotDetailPrev');
+      const detailNext = document.getElementById('iotDetailNext');
+      const detailProgress = document.getElementById('iotDetailProgress');
+      const detailDots = detailProgress?.querySelectorAll('.iot-detail-progress-dot');
+      let currentDetailSlide = 0;
+      const totalDetailSlides = 4;
+
+      const updateDetailProgress = (index) => {
+        if (!detailDots) return;
+        detailDots.forEach((dot, i) => {
+          if (i === index) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+      };
+
+      const goToDetailSlide = (index) => {
+        if (!detailViewport) return;
+        if (index < 0) index = 0;
+        if (index >= totalDetailSlides) index = totalDetailSlides - 1;
+        currentDetailSlide = index;
+        const slideWidth = detailViewport.clientWidth;
+        detailViewport.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
+        updateDetailProgress(index);
+      };
+
+      detailPrev?.addEventListener('click', () => {
+        if (currentDetailSlide > 0) {
+          goToDetailSlide(currentDetailSlide - 1);
+        }
+      });
+
+      detailNext?.addEventListener('click', () => {
+        if (currentDetailSlide < totalDetailSlides - 1) {
+          goToDetailSlide(currentDetailSlide + 1);
+        }
+      });
+
+      // Progress dots click handler
+      detailDots?.forEach((dot, index) => {
+        dot.addEventListener('click', () => goToDetailSlide(index));
+      });
+
+      // Update progress on scroll
+      detailViewport?.addEventListener('scroll', () => {
+        if (!detailViewport) return;
+        const slideWidth = detailViewport.clientWidth;
+        const scrollLeft = detailViewport.scrollLeft;
+        const newIndex = Math.round(scrollLeft / slideWidth);
+        if (newIndex !== currentDetailSlide && newIndex >= 0 && newIndex < totalDetailSlides) {
+          currentDetailSlide = newIndex;
+          updateDetailProgress(newIndex);
+        }
+      });
+
+      // Initialize progress indicator
+      updateDetailProgress(0);
     </script>
     <script>
       // Tandai bahwa user sudah mengunjungi home

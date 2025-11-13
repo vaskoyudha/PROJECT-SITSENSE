@@ -225,6 +225,55 @@
         50%  { filter: hue-rotate(10deg) saturate(115%); }
         100% { filter: hue-rotate(-10deg) saturate(110%); }
       }
+
+      /* Pastikan main container tidak memotong glow */
+      main {
+        overflow: visible !important;
+      }
+      
+      /* Wrapper untuk hero section dengan padding untuk glow */
+      .hero-wrapper {
+        padding: 50px;
+        margin: -50px;
+        position: relative;
+        overflow: visible;
+      }
+      
+      /* Outer glow effect on hover for hero section */
+      .hero-section {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 1;
+      }
+      
+      /* Glow effect di luar card - menggunakan pseudo-element pada wrapper */
+      .hero-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 50px;
+        left: 50px;
+        right: 50px;
+        bottom: 50px;
+        border-radius: 1.5rem;
+        background: transparent;
+        opacity: 0;
+        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: -1;
+        pointer-events: none;
+        box-shadow: 
+          0 0 50px rgba(6, 182, 212, 0.6),
+          0 0 100px rgba(139, 92, 246, 0.5),
+          0 0 150px rgba(16, 185, 129, 0.4),
+          0 0 200px rgba(6, 182, 212, 0.3);
+      }
+      
+      .hero-wrapper:hover .hero-section {
+        transform: translateY(-2px);
+      }
+      
+      .hero-wrapper:hover::before {
+        opacity: 1;
+      }
     </style>
   </head>
   <body class="min-h-screen text-slate-100">
@@ -357,7 +406,8 @@
     <!-- ================= MAIN ================= -->
     <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6 relative z-10 md:ml-64">
       <!-- ================= HERO SECTION ================= -->
-      <section class="hero-section relative overflow-hidden rounded-2xl glassy-card card-border p-8 md:p-12" data-aos="fade-up">
+      <div class="hero-wrapper relative">
+        <section class="hero-section relative overflow-hidden rounded-2xl glassy-card card-border p-8 md:p-12" data-aos="fade-up">
         <!-- Background gradient effect -->
         <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-emerald-500/10 pointer-events-none"></div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -407,6 +457,7 @@
           </div>
         </div>
       </section>
+      </div>
 
       <!-- Quick status cards -->
       <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
