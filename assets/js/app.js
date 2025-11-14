@@ -775,13 +775,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     const backStatusEl = document.getElementById('ultraBackStatus');
     const neckStatusEl = document.getElementById('ultraNeckStatus');
     
+    // Fungsi untuk konversi nilai jika terlalu besar (mungkin dalam satuan berbeda)
+    const normalizeValue = (value, sensorType) => {
+      if (!Number.isFinite(value) || value <= 0) return null;
+      
+      // Jika nilai > 50 cm (Max Range sensor), coba konversi
+      if (value > 50) {
+        // Coba bagi dengan 10 (mungkin dalam 0.1mm)
+        const div10 = value / 10;
+        // Coba bagi dengan 100 (mungkin dalam mm)
+        const div100 = value / 100;
+        
+        // Pilih yang paling masuk akal berdasarkan sensor type
+        if (sensorType === 'back') {
+          // Back ideal: 5-15 cm
+          if (div10 >= 3 && div10 <= 25) return div10;
+          if (div100 >= 3 && div100 <= 25) return div100;
+        } else {
+          // Neck ideal: 20-30 cm
+          if (div10 >= 15 && div10 <= 40) return div10;
+          if (div100 >= 15 && div100 <= 40) return div100;
+        }
+        
+        // Jika masih tidak masuk akal, return null (akan dianggap invalid)
+        console.warn(`[Ultrasonic] Nilai ${value} cm terlalu besar untuk sensor ${sensorType}, kemungkinan error sensor`);
+        return null;
+      }
+      
+      return value;
+    };
+    
+    // Normalisasi nilai sebelum ditampilkan
+    const normalizedBack = normalizeValue(backCm, 'back');
+    const normalizedNeck = normalizeValue(neckCm, 'neck');
+    
     const formatVal = (v) => {
       if (!Number.isFinite(v) || v <= 0) return '—';
-      // Tampilkan tanpa angka di belakang koma (truncate)
-      return String(Math.trunc(v));
+      // Tampilkan dengan 1 desimal
+      return v.toFixed(1);
     };
-    if (backValEl) backValEl.textContent = formatVal(backCm);
-    if (neckValEl) neckValEl.textContent = formatVal(neckCm);
+    
+    if (backValEl) backValEl.textContent = formatVal(normalizedBack || backCm);
+    if (neckValEl) neckValEl.textContent = formatVal(normalizedNeck || neckCm);
     
     const applyStatus = (el, value, kind) => {
       if (!el) return;
@@ -795,26 +830,50 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       dot.className = 'h-2 w-2 rounded-full bg-slate-400';
       
-      // Determine ranges per sensor
-      // Back ideal: 20-35 cm; caution: 15-20 or 35-45; danger: <15 or >45
-      // Neck ideal: 25-35 cm; caution: 20-25 or 35-45; danger: <20 or >45
+      // REKOMENDASI BARU berdasarkan ergonomi
+      // Back ideal: 5-15 cm (punggung menempel sandaran); caution: 3-5 atau 15-25; danger: <3 atau >25
+      // Neck ideal: 20-30 cm (kepala netral); caution: 15-20 atau 30-40; danger: <15 atau >40
+      // Max Range sensor: 50 cm - nilai di atas ini dianggap error/invalid
+      
       let label = '—';
-      if (!Number.isFinite(value) || value <= 0) {
-        label = 'Menunggu';
-        dot.className = 'h-2 w-2 rounded-full bg-slate-400';
-        el.textContent = label;
-        el.prepend(dot);
+      if (!Number.isFinite(value) || value <= 0 || value > 50) {
+        if (value > 50) {
+          label = 'Error Sensor';
+          dot.className = 'h-2 w-2 rounded-full bg-rose-400';
+          el.className += ' text-rose-400';
+        } else {
+          label = 'Menunggu';
+          dot.className = 'h-2 w-2 rounded-full bg-slate-400';
+        }
+        el.innerHTML = '';
+        el.appendChild(dot);
+        el.append(' ', label);
         return;
       }
       
-      let idealMin = kind === 'back' ? 20 : 25;
-      let idealMax = 35;
-      let cautionLowMin = kind === 'back' ? 15 : 20;
-      let cautionLowMax = kind === 'back' ? 20 : 25;
-      let cautionHighMin = 35;
-      let cautionHighMax = 45;
-      let dangerLowMax = kind === 'back' ? 15 : 20;
-      let dangerHighMin = 45;
+      // Batas untuk sensor Punggung
+      let idealMin, idealMax, cautionLowMin, cautionLowMax, cautionHighMin, cautionHighMax, dangerLowMax, dangerHighMin;
+      
+      if (kind === 'back') {
+        idealMin = 5;
+        idealMax = 15;
+        cautionLowMin = 3;
+        cautionLowMax = 5;
+        cautionHighMin = 15;
+        cautionHighMax = 25;
+        dangerLowMax = 3;
+        dangerHighMin = 25;
+      } else {
+        // Neck
+        idealMin = 20;
+        idealMax = 30;
+        cautionLowMin = 15;
+        cautionLowMax = 20;
+        cautionHighMin = 30;
+        cautionHighMax = 40;
+        dangerLowMax = 15;
+        dangerHighMin = 40;
+      }
       
       if (value >= idealMin && value <= idealMax) {
         label = 'Aman';
@@ -841,8 +900,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.append(' ', label);
     };
     
-    applyStatus(backStatusEl, backCm, 'back');
-    applyStatus(neckStatusEl, neckCm, 'neck');
+    // Gunakan nilai yang sudah dinormalisasi untuk status
+    applyStatus(backStatusEl, normalizedBack || backCm, 'back');
+    applyStatus(neckStatusEl, normalizedNeck || neckCm, 'neck');
   }
   window.updateUltrasonicUI = updateUltrasonicUI;
 

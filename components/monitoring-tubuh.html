@@ -222,6 +222,24 @@
             let lastNeck = null, lastBack = null;
             let seenData = false;
 
+            // Fungsi normalisasi untuk digunakan di listener
+            const normalizeValue = (value, sensorType) => {
+              if (!Number.isFinite(value) || value <= 0) return null;
+              if (value > 50) {
+                const div10 = value / 10;
+                const div100 = value / 100;
+                if (sensorType === 'back') {
+                  if (div10 >= 3 && div10 <= 25) return div10;
+                  if (div100 >= 3 && div100 <= 25) return div100;
+                } else {
+                  if (div10 >= 15 && div10 <= 40) return div10;
+                  if (div100 >= 15 && div100 <= 40) return div100;
+                }
+                return null;
+              }
+              return value;
+            };
+
             const setupListeners = (deviceId) => {
               console.info(`[Monitor] Attaching listeners for device ID: ${deviceId}`);
               const neckPath = `devices/${deviceId}/live/ultrasonic/leher_cm`;
@@ -237,9 +255,12 @@
                 const v = parseFloat(snap.val());
                 if (!Number.isNaN(v) && v !== lastNeck) {
                   lastNeck = v;
-                  setNeckDistance(v);
-                  setNeckHistory(prev => [...prev.slice(1), v]);
-                  logEvent({ sensor: 'neck', path: neckPath, raw: snap.val(), parsed: v });
+                  // Normalisasi nilai sebelum disimpan
+                  const normalized = normalizeValue(v, 'neck');
+                  const finalValue = (normalized !== null && Number.isFinite(normalized) && normalized > 0) ? normalized : v;
+                  setNeckDistance(finalValue);
+                  setNeckHistory(prev => [...prev.slice(1), finalValue]);
+                  logEvent({ sensor: 'neck', path: neckPath, raw: snap.val(), parsed: v, normalized: finalValue });
                   if (!seenData) { seenData = true; setUseSimulation(false); }
                 }
               });
@@ -248,9 +269,12 @@
                 const v = parseFloat(snap.val());
                 if (!Number.isNaN(v) && v !== lastBack) {
                   lastBack = v;
-                  setBackDistance(v);
-                  setBackHistory(prev => [...prev.slice(1), v]);
-                  logEvent({ sensor: 'back', path: backPath, raw: snap.val(), parsed: v });
+                  // Normalisasi nilai sebelum disimpan
+                  const normalized = normalizeValue(v, 'back');
+                  const finalValue = (normalized !== null && Number.isFinite(normalized) && normalized > 0) ? normalized : v;
+                  setBackDistance(finalValue);
+                  setBackHistory(prev => [...prev.slice(1), finalValue]);
+                  logEvent({ sensor: 'back', path: backPath, raw: snap.val(), parsed: v, normalized: finalValue });
                   if (!seenData) { seenData = true; setUseSimulation(false); }
                 }
               });
@@ -306,18 +330,56 @@
         // Broadcast values to parent (index.html) to sync "Jarak Ultrasonik" section
         useEffect(() => {
           try {
-            const statusOf = (d) => {
-              if (d < 10) return { text: 'Berbahaya', color: 'red' };
-              if (d < 20) return { text: 'Waspada', color: 'yellow' };
-              return { text: 'Aman', color: 'green' };
+            // Fungsi untuk normalisasi nilai (sama seperti di app.js)
+            const normalizeValue = (value, sensorType) => {
+              if (!Number.isFinite(value) || value <= 0) return null;
+              if (value > 50) {
+                const div10 = value / 10;
+                const div100 = value / 100;
+                if (sensorType === 'back') {
+                  if (div10 >= 3 && div10 <= 25) return div10;
+                  if (div100 >= 3 && div100 <= 25) return div100;
+                } else {
+                  if (div10 >= 15 && div10 <= 40) return div10;
+                  if (div100 >= 15 && div100 <= 40) return div100;
+                }
+                return null; // Invalid
+              }
+              return value;
             };
-            const neckS = statusOf(neckDistance);
-            const backS = statusOf(backDistance);
+            
+            // Fungsi status dengan batas baru yang konsisten
+            const statusOf = (d, sensorType) => {
+              const normalized = normalizeValue(d, sensorType);
+              const value = normalized || d;
+              
+              // Jika nilai tidak valid atau > 50 cm
+              if (!Number.isFinite(value) || value <= 0 || value > 50) {
+                return { text: value > 50 ? 'Error Sensor' : 'Menunggu', color: 'red' };
+              }
+              
+              // Batas sesuai sensor type
+              if (sensorType === 'back') {
+                // Back: Ideal 5-15, Waspada 3-5 atau 15-25, Berbahaya <3 atau >25
+                if (value >= 5 && value <= 15) return { text: 'Aman', color: 'green' };
+                if ((value >= 3 && value < 5) || (value > 15 && value <= 25)) return { text: 'Waspada', color: 'yellow' };
+                return { text: 'Berbahaya', color: 'red' };
+              } else {
+                // Neck: Ideal 20-30, Waspada 15-20 atau 30-40, Berbahaya <15 atau >40
+                if (value >= 20 && value <= 30) return { text: 'Aman', color: 'green' };
+                if ((value >= 15 && value < 20) || (value > 30 && value <= 40)) return { text: 'Waspada', color: 'yellow' };
+                return { text: 'Berbahaya', color: 'red' };
+              }
+            };
+            
+            // Pastikan menggunakan nilai yang sudah dinormalisasi untuk broadcast
+            const neckS = statusOf(neckDistance, 'neck');
+            const backS = statusOf(backDistance, 'back');
             window.parent?.postMessage({
               type: 'SITSENSE_ULTRA_UPDATE',
               data: {
-                neckDistance,
-                backDistance,
+                neckDistance: neckDistance, // Sudah dinormalisasi di listener
+                backDistance: backDistance, // Sudah dinormalisasi di listener
                 signalStrength,
                 neckStatus: neckS,
                 backStatus: backS
@@ -326,19 +388,110 @@
           } catch (e) {}
         }, [neckDistance, backDistance, signalStrength]);
 
-        const getStatusColor = (distance) => {
-          if (distance < 10) return 'text-red-500 bg-red-500/10 border-red-500/30';
-          if (distance < 20) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30';
-          return 'text-green-500 bg-green-500/10 border-green-500/30';
-        };
-        const getStatus = (distance) => {
-          if (distance < 10) return 'Terlalu Dekat';
-          if (distance < 20) return 'Perhatian';
-          return 'Normal';
+        // Update fungsi getStatusColor dan getStatus untuk konsistensi
+        const getStatusColor = (distance, sensorType = 'back') => {
+          const normalizeValue = (value, type) => {
+            if (!Number.isFinite(value) || value <= 0) return null;
+            if (value > 50) {
+              const div10 = value / 10;
+              const div100 = value / 100;
+              if (type === 'back') {
+                if (div10 >= 3 && div10 <= 25) return div10;
+                if (div100 >= 3 && div100 <= 25) return div100;
+              } else {
+                if (div10 >= 15 && div10 <= 40) return div10;
+                if (div100 >= 15 && div100 <= 40) return div100;
+              }
+              return null;
+            }
+            return value;
+          };
+          
+          const normalized = normalizeValue(distance, sensorType);
+          const value = normalized || distance;
+          
+          if (!Number.isFinite(value) || value <= 0 || value > 50) return 'text-red-500 bg-red-500/10 border-red-500/30';
+          
+          if (sensorType === 'back') {
+            if (value >= 5 && value <= 15) return 'text-green-500 bg-green-500/10 border-green-500/30';
+            if ((value >= 3 && value < 5) || (value > 15 && value <= 25)) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30';
+            return 'text-red-500 bg-red-500/10 border-red-500/30';
+          } else {
+            if (value >= 20 && value <= 30) return 'text-green-500 bg-green-500/10 border-green-500/30';
+            if ((value >= 15 && value < 20) || (value > 30 && value <= 40)) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30';
+            return 'text-red-500 bg-red-500/10 border-red-500/30';
+          }
         };
 
-        const SensorCard = ({ title, distance, gradient, accentColor, history }) => {
-          const statusColor = getStatusColor(distance);
+        const getStatus = (distance, sensorType = 'back') => {
+          const normalizeValue = (value, type) => {
+            if (!Number.isFinite(value) || value <= 0) return null;
+            if (value > 50) {
+              const div10 = value / 10;
+              const div100 = value / 100;
+              if (type === 'back') {
+                if (div10 >= 3 && div10 <= 25) return div10;
+                if (div100 >= 3 && div100 <= 25) return div100;
+              } else {
+                if (div10 >= 15 && div10 <= 40) return div10;
+                if (div100 >= 15 && div100 <= 40) return div100;
+              }
+              return null;
+            }
+            return value;
+          };
+          
+          const normalized = normalizeValue(distance, sensorType);
+          const value = normalized || distance;
+          
+          if (!Number.isFinite(value) || value <= 0 || value > 50) {
+            return value > 50 ? 'Error Sensor' : 'Menunggu Data';
+          }
+          
+          if (sensorType === 'back') {
+            if (value >= 5 && value <= 15) return 'Normal';
+            if ((value >= 3 && value < 5) || (value > 15 && value <= 25)) return 'Perhatian';
+            return 'Terlalu Dekat/Jauh';
+          } else {
+            if (value >= 20 && value <= 30) return 'Normal';
+            if ((value >= 15 && value < 20) || (value > 30 && value <= 40)) return 'Perhatian';
+            return 'Terlalu Dekat/Jauh';
+          }
+        };
+
+        const SensorCard = ({ title, distance, gradient, accentColor, history, sensorType }) => {
+          // Normalisasi nilai untuk ditampilkan
+          const normalizeValue = (value, type) => {
+            if (!Number.isFinite(value) || value <= 0) return null;
+            if (value > 50) {
+              const div10 = value / 10;
+              const div100 = value / 100;
+              if (type === 'back') {
+                if (div10 >= 3 && div10 <= 25) return div10;
+                if (div100 >= 3 && div100 <= 25) return div100;
+              } else {
+                if (div10 >= 15 && div10 <= 40) return div10;
+                if (div100 >= 15 && div100 <= 40) return div100;
+              }
+              return null;
+            }
+            return value;
+          };
+          
+          // Normalisasi nilai utama
+          const normalizedDistance = normalizeValue(distance, sensorType);
+          const displayDistance = (normalizedDistance !== null && Number.isFinite(normalizedDistance) && normalizedDistance > 0) 
+            ? normalizedDistance 
+            : (Number.isFinite(distance) && distance > 0 ? distance : 0);
+          
+          // Normalisasi history untuk grafik
+          const normalizedHistory = history.map(val => {
+            const normalized = normalizeValue(val, sensorType);
+            return (normalized !== null && Number.isFinite(normalized) && normalized > 0) ? normalized : val;
+          });
+          
+          // Gunakan displayDistance untuk status agar konsisten dengan tampilan
+          const statusColor = getStatusColor(displayDistance, sensorType);
           const maxValue = 50;
           return (
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 shadow-2xl group hover:scale-[1.02] transition-all duration-500">
@@ -425,13 +578,13 @@
                   <div className="relative flex items-end justify-center gap-2 mb-4">
                     <IconStatic name="trending-up" className={`w-6 h-6 bg-gradient-to-r ${gradient}`} />
                     <span className="text-4xl font-bold bg-gradient-to-r bg-clip-text text-transparent drop-shadow-2xl animate-pulse" style={{ backgroundImage: accentColor.includes('blue') ? 'linear-gradient(to right, #3b82f6, #06b6d4)' : 'linear-gradient(to right, #a855f7, #ec4899)' }}>
-                      {distance.toFixed(1)}
+                      {displayDistance.toFixed(1)}
                     </span>
                     <span className="text-xl font-semibold text-slate-400 mb-1.5">cm</span>
                   </div>
                   <div className="relative h-3.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700 shadow-inner">
                     <div className="absolute top-0 left-0 h-full transition-all duration-300 rounded-full shadow-lg" style={{
-                      width: `${Math.min((distance / 50) * 100, 100)}%`,
+                      width: `${Math.min((displayDistance / 50) * 100, 100)}%`,
                       backgroundImage: accentColor.includes('blue') ? 'linear-gradient(to right, #3b82f6, #06b6d4)' : 'linear-gradient(to right, #a855f7, #ec4899)'
                     }}>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer"></div>
@@ -449,7 +602,7 @@
                 <div className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border ${statusColor} backdrop-blur-sm relative overflow-hidden group/status`}>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover/status:translate-x-[100%] transition-transform duration-1000"></div>
                   <IconStatic name="activity" className="w-5 h-5 bg-gradient-to-r from-slate-400 to-slate-200" />
-                  <span className="font-semibold text-lg">{getStatus(distance)}</span>
+                  <span className="font-semibold text-lg">{getStatus(displayDistance, sensorType)}</span>
                   <IconStatic name="alert-circle" className={`w-5 h-5 bg-gradient-to-r ${gradient}`} />
                 </div>
                 <div className="mt-5 grid grid-cols-3 gap-3">
@@ -489,15 +642,15 @@
                         </linearGradient>
                       </defs>
                       <path
-                        d={`M 0 ${100 - (history[0] / maxValue) * 100} ${history.map((val, i) =>
-                          `L ${(i / (history.length - 1)) * 100} ${100 - (val / maxValue) * 100}`
+                        d={`M 0 ${100 - (normalizedHistory[0] / maxValue) * 100} ${normalizedHistory.map((val, i) =>
+                          `L ${(i / (normalizedHistory.length - 1)) * 100} ${100 - (val / maxValue) * 100}`
                         ).join(' ')} L 100 100 L 0 100 Z`}
                         fill={`url(#gradient-${title})`}
                         vectorEffect="non-scaling-stroke"
                       />
                       <path
-                        d={`M 0 ${100 - (history[0] / maxValue) * 100} ${history.map((val, i) =>
-                          `L ${(i / (history.length - 1)) * 100} ${100 - (val / maxValue) * 100}`
+                        d={`M 0 ${100 - (normalizedHistory[0] / maxValue) * 100} ${normalizedHistory.map((val, i) =>
+                          `L ${(i / (normalizedHistory.length - 1)) * 100} ${100 - (val / maxValue) * 100}`
                         ).join(' ')}`}
                         fill="none"
                         stroke={accentColor.includes('blue') ? '#3b82f6' : '#a855f7'}
@@ -505,8 +658,8 @@
                         vectorEffect="non-scaling-stroke"
                       />
                       <path
-                        d={`M 0 ${100 - (history[0] / maxValue) * 100} ${history.map((val, i) =>
-                          `L ${(i / (history.length - 1)) * 100} ${100 - (val / maxValue) * 100}`
+                        d={`M 0 ${100 - (normalizedHistory[0] / maxValue) * 100} ${normalizedHistory.map((val, i) =>
+                          `L ${(i / (normalizedHistory.length - 1)) * 100} ${100 - (val / maxValue) * 100}`
                         ).join(' ')}`}
                         fill="none"
                         stroke={accentColor.includes('blue') ? '#3b82f6' : '#a855f7'}
@@ -514,7 +667,7 @@
                         vectorEffect="non-scaling-stroke"
                         opacity="0.3"
                       />
-                      <circle cx="100" cy={100 - (history[history.length - 1] / maxValue) * 100} r="3" fill={accentColor.includes('blue') ? '#3b82f6' : '#a855f7'}>
+                      <circle cx="100" cy={100 - (normalizedHistory[normalizedHistory.length - 1] / maxValue) * 100} r="3" fill={accentColor.includes('blue') ? '#3b82f6' : '#a855f7'}>
                         <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
                       </circle>
                     </svg>
@@ -525,19 +678,19 @@
                     <div className="text-center p-2 rounded-lg bg-slate-800/30 border border-slate-700/50">
                       <p className="text-slate-500 text-xs">Avg</p>
                       <p className="font-bold text-sm" style={{ color: accentColor.includes('blue') ? '#60a5fa' : '#a78bfa' }}>
-                        {(history.reduce((a, b) => a + b, 0) / history.length).toFixed(1)}cm
+                        {(normalizedHistory.reduce((a, b) => a + b, 0) / normalizedHistory.length).toFixed(1)}cm
                       </p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-slate-800/30 border border-slate-700/50">
                       <p className="text-slate-500 text-xs">Min</p>
                       <p className="font-bold text-sm" style={{ color: accentColor.includes('blue') ? '#60a5fa' : '#a78bfa' }}>
-                        {Math.min(...history).toFixed(1)}cm
+                        {Math.min(...normalizedHistory).toFixed(1)}cm
                       </p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-slate-800/30 border border-slate-700/50">
                       <p className="text-slate-500 text-xs">Max</p>
                       <p className="font-bold text-sm" style={{ color: accentColor.includes('blue') ? '#60a5fa' : '#a78bfa' }}>
-                        {Math.max(...history).toFixed(1)}cm
+                        {Math.max(...normalizedHistory).toFixed(1)}cm
                       </p>
                     </div>
                   </div>
@@ -556,8 +709,8 @@
         return (
           <div className="min-h-[700px] bg-transparent p-4">
             <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
-              <SensorCard title="Sensor Leher" distance={neckDistance} gradient="from-blue-500 to-cyan-500" accentColor="blue" history={neckHistory} />
-              <SensorCard title="Sensor Punggung" distance={backDistance} gradient="from-purple-500 to-pink-500" accentColor="purple" history={backHistory} />
+              <SensorCard title="Sensor Leher" distance={neckDistance} gradient="from-blue-500 to-cyan-500" accentColor="blue" history={neckHistory} sensorType="neck" />
+              <SensorCard title="Sensor Punggung" distance={backDistance} gradient="from-purple-500 to-pink-500" accentColor="purple" history={backHistory} sensorType="back" />
             </div>
             {/* Debug Console */}
             <div className="fixed bottom-4 right-4 z-[1000]">
