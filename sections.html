@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fitur Section — SitSense</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind + DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons, Animations -->
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js" defer></script>
+
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="./assets/js/firebase-config.js"></script>
+
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <style>
+      /* Custom Gradient Button Styles */
+      .btn-gradient-primary {
+        background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #10b981 100%);
+        background-size: 200% 200%;
+        border: none;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);
+        transform-origin: center;
+        will-change: background-position, box-shadow, transform;
+      }
+      
+      .btn-gradient-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.6s ease;
+        z-index: 1;
+      }
+      
+      .btn-gradient-primary:hover {
+        background-position: 100% 0;
+        box-shadow: 
+          0 8px 30px rgba(6, 182, 212, 0.6),
+          0 0 50px rgba(139, 92, 246, 0.5),
+          0 0 70px rgba(16, 185, 129, 0.4),
+          0 12px 40px rgba(0, 0, 0, 0.4);
+        transform: translateY(-2px) scale(1.02);
+      }
+      
+      .btn-gradient-primary:hover::before {
+        left: 100%;
+      }
+      
+      .btn-gradient-primary:active {
+        transform: translateY(0) scale(0.98);
+        transition: transform 0.1s;
+      }
+      
+      .btn-gradient-primary .relative {
+        position: relative;
+        z-index: 2;
+      }
+      
+      /* Outline Button dengan Gradient Border */
+      .btn-gradient-outline {
+        background: transparent;
+        border: 2px solid transparent;
+        color: #e7eefc;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center;
+        will-change: box-shadow, transform;
+      }
+      
+      .btn-gradient-outline::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(135deg, #06b6d4, #8b5cf6, #10b981);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+        z-index: 0;
+      }
+      
+      .btn-gradient-outline::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2), rgba(16, 185, 129, 0.2));
+        transition: left 0.5s ease;
+        z-index: -1;
+      }
+      
+      .btn-gradient-outline:hover {
+        color: #ffffff;
+        box-shadow: 
+          0 0 25px rgba(6, 182, 212, 0.4),
+          0 0 50px rgba(139, 92, 246, 0.3),
+          inset 0 0 25px rgba(6, 182, 212, 0.15);
+        transform: translateY(-2px) scale(1.02);
+      }
+      
+      .btn-gradient-outline:hover::after {
+        left: 100%;
+      }
+      
+      .btn-gradient-outline:active {
+        transform: translateY(0) scale(0.98);
+        transition: transform 0.1s;
+      }
+      
+      .btn-gradient-outline .relative {
+        position: relative;
+        z-index: 2;
+      }
+
+      /* Smooth section transitions */
+      section {
+        scroll-margin-top: 100px;
+      }
+
+      .section-shell {
+        background: linear-gradient(to bottom, transparent, rgba(6, 182, 212, 0.02), transparent);
+        position: relative;
+      }
+
+      .section-shell.section-shell--alt {
+        background: linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.02), transparent);
+      }
+
+      /* Navigation dots */
+      .nav-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(148, 163, 184, 0.3);
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .nav-dot.active {
+        background: rgba(6, 182, 212, 0.6);
+        border-color: rgba(6, 182, 212, 0.8);
+        transform: scale(1.2);
+      }
+
+      .nav-dot:hover {
+        background: rgba(6, 182, 212, 0.4);
+      }
+    </style>
+  </head>
+  <body class="bg-[#0b1220] text-slate-100 min-h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar-slot"></div>
+    
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn" class="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+      <i data-lucide="menu" class="h-6 w-6"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main class="md:ml-64 pt-16">
+      <!-- Hero Section -->
+      <section class="relative overflow-hidden py-20 md:py-32">
+        <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-emerald-500/10 pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+          <div class="text-center max-w-4xl mx-auto">
+            <span class="inline-block px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-sm font-medium mb-6" data-aos="fade-up">
+              <i data-lucide="layers" class="h-4 w-4 inline mr-2"></i>
+              Dokumentasi Fitur
+            </span>
+            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-cyan-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent" data-aos="fade-up" data-aos-delay="100">
+              Fitur Section SitSense
+            </h1>
+            <p class="text-xl md:text-2xl text-slate-300 leading-relaxed mb-8" data-aos="fade-up" data-aos-delay="200">
+              Jelajahi semua section yang tersedia di website SitSense. Setiap section dirancang dengan detail untuk memberikan pengalaman terbaik bagi pengguna.
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-4" data-aos="fade-up" data-aos-delay="300">
+              <a href="./home.html" class="btn btn-gradient-primary normal-case">
+                <i data-lucide="arrow-left" class="h-4 w-4 mr-2"></i>
+                Kembali ke Home
+              </a>
+              <a href="#jumbotron-section" class="btn btn-gradient-outline normal-case">
+                Mulai Jelajahi
+                <i data-lucide="arrow-down" class="h-4 w-4 ml-2"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Navigation -->
+      <section class="sticky top-16 z-30 bg-[#0b1220]/80 backdrop-blur-xl border-b border-white/10 py-4">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="flex items-center justify-between overflow-x-auto gap-4">
+            <span class="text-sm text-slate-400 whitespace-nowrap">Navigasi Cepat:</span>
+            <div class="flex items-center gap-2 flex-1">
+              <a href="#jumbotron-section" class="nav-dot" title="Jumbotron"></a>
+              <a href="#features-section" class="nav-dot" title="Features"></a>
+              <a href="#solutions-section" class="nav-dot" title="Solutions"></a>
+              <a href="#learn-section" class="nav-dot" title="Learn"></a>
+              <a href="#teams-section" class="nav-dot" title="For Teams"></a>
+              <a href="#developers-section" class="nav-dot" title="For Developers"></a>
+              <a href="#iot-section" class="nav-dot" title="IoT Showcase"></a>
+              <a href="#contact-section" class="nav-dot" title="Contact"></a>
+            </div>
+            <a href="#top" class="text-sm text-cyan-300 hover:text-cyan-200 whitespace-nowrap">
+              <i data-lucide="arrow-up" class="h-4 w-4 inline mr-1"></i>
+              Ke Atas
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Jumbotron Section Detail -->
+      <section id="jumbotron-section" class="section-shell py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-cyan card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="sparkles" class="h-8 w-8 text-cyan-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  Jumbotron Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Section hero utama yang menjadi pintu masuk pertama bagi pengunjung. Dirancang dengan animasi yang menarik dan call-to-action yang jelas.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glassy-card card-border p-6" data-aos="fade-up" data-aos-delay="100">
+              <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="info" class="h-5 w-5 text-cyan-300"></i>
+                Deskripsi
+              </h3>
+              <ul class="space-y-3 text-slate-300">
+                <li class="flex items-start gap-3">
+                  <i data-lucide="check" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Menampilkan logo SitSense dengan animasi yang menarik</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="check" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Headline utama dengan gradient text yang eye-catching</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="check" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Deskripsi singkat tentang produk dan manfaatnya</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="check" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Call-to-action buttons untuk memulai menggunakan aplikasi</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="check" class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Floating decorative elements dengan animasi yang halus</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="glassy-card card-border p-6" data-aos="fade-up" data-aos-delay="200">
+              <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="settings" class="h-5 w-5 text-purple-300"></i>
+                Fitur Teknis
+              </h3>
+              <ul class="space-y-3 text-slate-300">
+                <li class="flex items-start gap-3">
+                  <i data-lucide="zap" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Background gradient dengan efek blur dan pulse animation</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="zap" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                  <span>AOS (Animate On Scroll) untuk animasi saat scroll</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="zap" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Responsive design untuk semua ukuran layar</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="zap" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Gradient buttons dengan hover effects yang smooth</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <i data-lucide="zap" class="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                  <span>Pattern overlay dan grid lines untuk depth effect</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mt-8 glassy-card gradient-purple card-border p-6" data-aos="fade-up" data-aos-delay="300">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="code" class="h-5 w-5 text-purple-300"></i>
+              Lokasi di Home Page
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini berada di bagian paling atas halaman home, tepat setelah header. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#jumbotron</code>
+            </p>
+            <a href="./home.html#jumbotron" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section Detail -->
+      <section id="features-section" class="section-shell section-shell--alt py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-purple card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="sparkles" class="h-8 w-8 text-purple-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                  Features Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Menampilkan semua fitur unggulan SitSense dalam format card yang menarik. Setiap fitur memiliki icon, deskripsi, dan efek hover yang interaktif.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="glassy-card gradient-cyan card-border p-6" data-aos="fade-up" data-aos-delay="100">
+              <div class="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4">
+                <i data-lucide="activity" class="h-6 w-6 text-cyan-300"></i>
+              </div>
+              <h3 class="text-lg font-semibold mb-2">Monitoring Real-time</h3>
+              <p class="text-slate-400 text-sm">Pantau postur duduk Anda secara real-time dengan sensor tekanan cerdas yang akurat dan responsif.</p>
+            </div>
+
+            <div class="glassy-card gradient-purple card-border p-6" data-aos="fade-up" data-aos-delay="200">
+              <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
+                <i data-lucide="sparkles" class="h-6 w-6 text-purple-300"></i>
+              </div>
+              <h3 class="text-lg font-semibold mb-2">AI Recommendations</h3>
+              <p class="text-slate-400 text-sm">Dapatkan rekomendasi personal dari AI berbasis Gemini untuk memperbaiki postur Anda.</p>
+            </div>
+
+            <div class="glassy-card gradient-emerald card-border p-6" data-aos="fade-up" data-aos-delay="300">
+              <div class="w-12 h-12 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-4">
+                <i data-lucide="bar-chart-2" class="h-6 w-6 text-emerald-300"></i>
+              </div>
+              <h3 class="text-lg font-semibold mb-2">Analytics Lengkap</h3>
+              <p class="text-slate-400 text-sm">Akses statistik detail, riwayat sesi, dan laporan komprehensif tentang kebiasaan duduk Anda.</p>
+            </div>
+
+            <div class="glassy-card gradient-amber card-border p-6" data-aos="fade-up" data-aos-delay="400">
+              <div class="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center mb-4">
+                <i data-lucide="bell" class="h-6 w-6 text-yellow-300"></i>
+              </div>
+              <h3 class="text-lg font-semibold mb-2">Smart Alerts</h3>
+              <p class="text-slate-400 text-sm">Notifikasi cerdas saat postur buruk terdeteksi atau durasi duduk melebihi ambang batas.</p>
+            </div>
+
+            <div class="glassy-card gradient-rose card-border p-6" data-aos="fade-up" data-aos-delay="500">
+              <div class="w-12 h-12 rounded-lg bg-rose-500/20 flex items-center justify-center mb-4">
+                <i data-lucide="volume-2" class="h-6 w-6 text-rose-300"></i>
+              </div>
+              <h3 class="text-lg font-semibold mb-2">Text-to-Speech</h3>
+              <p class="text-slate-400 text-sm">Dengarkan rekomendasi AI dengan suara natural menggunakan Google Text-to-Speech.</p>
+            </div>
+
+            <div class="glassy-card gradient-violet card-border p-6" data-aos="fade-up" data-aos-delay="600">
+              <div class="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <i data-lucide="cloud" class="h-6 w-6 text-violet-300"></i>
+              </div>
+              <h3 class="text-lg font-semibold mb-2">Cloud Sync</h3>
+              <p class="text-slate-400 text-sm">Sinkronisasi data dengan Firebase untuk akses multi-device dan backup otomatis.</p>
+            </div>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-purple-300"></i>
+              Informasi Section
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-semibold text-slate-200 mb-2">Jumlah Fitur</h4>
+                <p class="text-slate-400">6 fitur utama yang ditampilkan dalam grid layout responsif</p>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-200 mb-2">Lokasi</h4>
+                <p class="text-slate-400">ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#features</code></p>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-200 mb-2">Animasi</h4>
+                <p class="text-slate-400">Setiap card memiliki fade-up animation dengan delay bertahap</p>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-200 mb-2">Interaksi</h4>
+                <p class="text-slate-400">Hover effect dengan scale transform dan gradient overlay</p>
+              </div>
+            </div>
+            <div class="mt-6">
+              <a href="./home.html#features" class="btn btn-gradient-outline normal-case btn-sm">
+                Lihat di Home Page
+                <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Solutions Section Detail -->
+      <section id="solutions-section" class="section-shell py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-emerald card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="layers" class="h-8 w-8 text-emerald-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+                  Solutions Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Menampilkan solusi yang disesuaikan untuk berbagai kebutuhan: individu, tim, dan klinik. Setiap solusi memiliki fitur dan manfaat yang berbeda.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div class="glassy-card gradient-cyan card-border p-8 hover:scale-105 transition-all" data-aos="fade-up" data-aos-delay="100">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white">Untuk Individu</h3>
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center">
+                  <i data-lucide="user" class="h-6 w-6 text-cyan-300"></i>
+                </div>
+              </div>
+              <p class="text-slate-300 mb-6 leading-relaxed">
+                Solusi personal untuk menjaga postur duduk sehat di rumah atau kantor. Pantau kebiasaan duduk Anda dan dapatkan insight untuk hidup yang lebih sehat.
+              </p>
+              <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Monitoring real-time</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Rekomendasi AI personal</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Dashboard analytics</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="glassy-card gradient-purple card-border p-8 hover:scale-105 transition-all" data-aos="fade-up" data-aos-delay="200">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white">Untuk Tim</h3>
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-600/20 flex items-center justify-center">
+                  <i data-lucide="users" class="h-6 w-6 text-purple-300"></i>
+                </div>
+              </div>
+              <p class="text-slate-300 mb-6 leading-relaxed">
+                Kelola kesehatan postur seluruh tim dengan dashboard terpusat. Pantau statistik tim dan tingkatkan produktivitas dengan postur yang lebih baik.
+              </p>
+              <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Multi-user management</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Team analytics</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Customizable alerts</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="glassy-card gradient-emerald card-border p-8 hover:scale-105 transition-all" data-aos="fade-up" data-aos-delay="300">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white">Untuk Klinik</h3>
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center">
+                  <i data-lucide="stethoscope" class="h-6 w-6 text-emerald-300"></i>
+                </div>
+              </div>
+              <p class="text-slate-300 mb-6 leading-relaxed">
+                Solusi profesional untuk klinik fisioterapi dan kesehatan. Pantau progress pasien dan berikan rekomendasi berbasis data.
+              </p>
+              <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Patient tracking</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Progress reports</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <i data-lucide="check" class="h-4 w-4 text-emerald-400"></i>
+                  <span>Export data</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-emerald-300"></i>
+              Informasi Section
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini menampilkan 3 solusi utama dengan layout grid 3 kolom. Setiap card memiliki gradient yang berbeda dan fitur checklist yang jelas. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#solutions</code>
+            </p>
+            <a href="./home.html#solutions" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Learn Section Detail -->
+      <section id="learn-section" class="section-shell section-shell--alt py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-cyan card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="book-open" class="h-8 w-8 text-cyan-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  Learn Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Section pembelajaran yang menyediakan berbagai resource untuk membantu pengguna memahami dan memaksimalkan penggunaan SitSense.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glassy-card gradient-cyan card-border p-6" data-aos="fade-up" data-aos-delay="100">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="book-open" class="h-6 w-6 text-cyan-300"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Panduan Pengguna</h3>
+                  <p class="text-slate-400 text-sm mb-4">
+                    Pelajari cara menggunakan SitSense dengan efektif. Mulai dari setup perangkat, kalibrasi sensor, hingga membaca insight posture.
+                  </p>
+                  <a href="./help.html" class="text-cyan-300 hover:text-cyan-200 text-sm font-medium inline-flex items-center gap-1">
+                    Baca panduan <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="glassy-card gradient-purple card-border p-6" data-aos="fade-up" data-aos-delay="200">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="brain" class="h-6 w-6 text-purple-300"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Insight Ahli</h3>
+                  <p class="text-slate-400 text-sm mb-4">
+                    Dapatkan insight dari fisioterapis dan ergonomist mengenai kebiasaan duduk yang ideal serta pencegahan cedera.
+                  </p>
+                  <a href="./about.html" class="text-purple-300 hover:text-purple-200 text-sm font-medium inline-flex items-center gap-1">
+                    Pelajari lebih lanjut <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="glassy-card gradient-emerald card-border p-6" data-aos="fade-up" data-aos-delay="300">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="users" class="h-6 w-6 text-emerald-300"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Komunitas & Webinar</h3>
+                  <p class="text-slate-400 text-sm mb-4">
+                    Ikuti sesi coaching rutin dan diskusi komunitas untuk memaksimalkan penggunaan SitSense di aktivitas harian Anda.
+                  </p>
+                  <a href="#learn-sessions" class="text-emerald-300 hover:text-emerald-200 text-sm font-medium inline-flex items-center gap-1">
+                    Jadwal webinar <i data-lucide="calendar" class="h-4 w-4"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-cyan-300"></i>
+              Informasi Section
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini juga mencakup learning path dengan progress tracking dan sesi webinar yang terjadwal. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#learn</code>
+            </p>
+            <a href="./home.html#learn" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- For Teams Section Detail -->
+      <section id="teams-section" class="section-shell py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-purple card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="users" class="h-8 w-8 text-purple-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                  For Teams Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Section khusus yang menjelaskan manfaat dan fitur SitSense untuk penggunaan tim dan kolaborasi dalam lingkungan kerja.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glassy-card gradient-purple card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 class="text-3xl font-bold mb-4">Kolaborasi Tanpa Batas</h3>
+                <p class="text-slate-300 mb-6 leading-relaxed">
+                  Bawa ide terbaik tim Anda ke kehidupan dengan suite kreatif AI-first yang dirancang untuk kolaborasi dan dibangun untuk bisnis.
+                </p>
+                <ul class="space-y-3">
+                  <li class="flex items-center gap-3 text-slate-300">
+                    <i data-lucide="check-circle" class="h-5 w-5 text-emerald-400"></i>
+                    <span>Dashboard tim terpusat untuk monitoring bersama</span>
+                  </li>
+                  <li class="flex items-center gap-3 text-slate-300">
+                    <i data-lucide="check-circle" class="h-5 w-5 text-emerald-400"></i>
+                    <span>Laporan analitik untuk seluruh anggota tim</span>
+                  </li>
+                  <li class="flex items-center gap-3 text-slate-300">
+                    <i data-lucide="check-circle" class="h-5 w-5 text-emerald-400"></i>
+                    <span>Manajemen pengguna dengan role-based access</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-64 flex flex-col items-center justify-center text-center text-slate-400">
+                <i data-lucide="users" class="h-16 w-16 mb-4 text-purple-300/50"></i>
+                <p class="text-sm">Visualisasi Tim Collaboration</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-purple-300"></i>
+              Informasi Section
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini fokus pada manfaat kolaborasi tim dan fitur-fitur yang mendukung kerja tim. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#for-teams</code>
+            </p>
+            <a href="./home.html#for-teams" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- For Developers Section Detail -->
+      <section id="developers-section" class="section-shell section-shell--alt py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-emerald card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="code" class="h-8 w-8 text-emerald-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+                  For Developers Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Section untuk developer yang ingin mengintegrasikan atau mengembangkan fitur tambahan pada SitSense. Menyediakan dokumentasi API dan resources.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="glassy-card gradient-cyan card-border p-6" data-aos="fade-up" data-aos-delay="100">
+              <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="api" class="h-5 w-5 text-cyan-300"></i>
+                API Documentation
+              </h3>
+              <p class="text-slate-300 mb-4">
+                Akses lengkap ke REST API untuk integrasi dengan aplikasi Anda sendiri. Dokumentasi lengkap dengan contoh kode dan best practices.
+              </p>
+              <a href="#" class="text-cyan-300 hover:text-cyan-200 text-sm font-medium inline-flex items-center gap-1">
+                Lihat Dokumentasi <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </a>
+            </div>
+
+            <div class="glassy-card gradient-purple card-border p-6" data-aos="fade-up" data-aos-delay="200">
+              <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="github" class="h-5 w-5 text-purple-300"></i>
+                Open Source
+              </h3>
+              <p class="text-slate-400 mb-4">
+                Beberapa komponen SitSense tersedia sebagai open source. Kontribusi dan feedback sangat diterima untuk pengembangan lebih lanjut.
+              </p>
+              <a href="#" class="text-purple-300 hover:text-purple-200 text-sm font-medium inline-flex items-center gap-1">
+                Lihat di GitHub <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-emerald-300"></i>
+              Informasi Section
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini menyediakan resources untuk developer termasuk API docs, SDK, dan contoh integrasi. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#for-developers</code>
+            </p>
+            <a href="./home.html#for-developers" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- IoT Showcase Section Detail -->
+      <section id="iot-section" class="section-shell py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-emerald card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="circuit-board" class="h-8 w-8 text-emerald-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  IoT Showcase Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Section yang menjelaskan secara detail komponen IoT yang digunakan dalam SitSense, mulai dari sensor hingga cloud gateway.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glassy-card gradient-emerald card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+              <div class="space-y-8">
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-400/40">
+                    <span class="font-semibold text-cyan-200">1</span>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold mb-2">Sensor Tekanan Kursi</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Panel sensor piezo-elektrik mendeteksi distribusi berat tubuh dan mengirimkan data matrix tekanan. Ideal untuk memantau postur duduk menit demi menit.</p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-400/40">
+                    <span class="font-semibold text-emerald-200">2</span>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold mb-2">NodeMCU / ESP32 Gateway</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Microcontroller ESP32 menggabungkan Wi‑Fi, BLE, dan ADC sehingga data sensor langsung ditransmisikan ke cloud SitSense, lengkap dengan enkripsi TLS.</p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/40">
+                    <span class="font-semibold text-purple-200">3</span>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold mb-2">Gateway Cloud & AI Engine</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Data yang masuk dianalisis oleh machine learning posture model untuk menghasilkan skor postur, rekomendasi Gemini AI, dan pengingat adaptif.</p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-400/40">
+                    <span class="font-semibold text-amber-200">4</span>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold mb-2">Dashboard & Alert Layer</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">UI SitSense merender data secara realtime, menyalakan notifikasi, dan menampilkan pembaruan streak agar kebiasaan duduk sehat terjaga.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                  <i data-lucide="cpu" class="h-12 w-12 mb-2 text-emerald-300/50"></i>
+                  <p>Foto modul sensor tekanan</p>
+                </div>
+                <div class="relative rounded-3xl border border-dashed border-white/20 bg-white/5 h-48 flex flex-col items-center justify-center text-center text-slate-400 text-sm">
+                  <i data-lucide="wifi" class="h-12 w-12 mb-2 text-cyan-300/50"></i>
+                  <p>Foto NodeMCU / ESP32</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-emerald-300"></i>
+              Informasi Section
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini juga memiliki carousel detail yang menjelaskan setiap komponen secara lebih mendalam. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#iot-showcase</code>
+            </p>
+            <a href="./home.html#iot-showcase" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Section Detail -->
+      <section id="contact-section" class="section-shell section-shell--alt py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-cyan card-border p-8 md:p-12 mb-8" data-aos="fade-up">
+            <div class="flex items-start gap-6 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="mail" class="h-8 w-8 text-cyan-300"></i>
+              </div>
+              <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  Contact Section
+                </h2>
+                <p class="text-lg text-slate-300 leading-relaxed">
+                  Section kontak yang memudahkan pengunjung untuk menghubungi tim SitSense melalui berbagai channel komunikasi.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="glassy-card gradient-cyan card-border p-6 text-center" data-aos="fade-up" data-aos-delay="100">
+              <div class="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="mail" class="h-8 w-8 text-cyan-300"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-2">Email</h3>
+              <p class="text-slate-400 text-sm mb-4">Kirim email untuk pertanyaan umum</p>
+              <a href="mailto:support@sitsense.com" class="text-cyan-300 hover:text-cyan-200">
+                support@sitsense.com
+              </a>
+            </div>
+            
+            <div class="glassy-card gradient-purple card-border p-6 text-center" data-aos="fade-up" data-aos-delay="200">
+              <div class="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="message-circle" class="h-8 w-8 text-purple-300"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-2">Live Chat</h3>
+              <p class="text-slate-400 text-sm mb-4">Chat langsung dengan tim support</p>
+              <a href="#" class="text-purple-300 hover:text-purple-200">
+                Mulai Chat
+              </a>
+            </div>
+          </div>
+
+          <div class="glassy-card gradient-emerald card-border p-8 mb-8" data-aos="fade-up" data-aos-delay="300">
+            <h3 class="text-2xl font-semibold mb-4 text-center">Kirim Pesan</h3>
+            <form class="space-y-4">
+              <div>
+                <label class="label">
+                  <span class="label-text text-slate-300">Nama</span>
+                </label>
+                <input type="text" placeholder="Nama Anda" class="input input-bordered w-full bg-white/5 border-white/10" />
+              </div>
+              <div>
+                <label class="label">
+                  <span class="label-text text-slate-300">Email</span>
+                </label>
+                <input type="email" placeholder="email@example.com" class="input input-bordered w-full bg-white/5 border-white/10" />
+              </div>
+              <div>
+                <label class="label">
+                  <span class="label-text text-slate-300">Pesan</span>
+                </label>
+                <textarea class="textarea textarea-bordered w-full bg-white/5 border-white/10" placeholder="Tulis pesan Anda di sini..." rows="4"></textarea>
+              </div>
+              <button type="submit" class="btn btn-gradient-primary w-full normal-case relative">
+                <i data-lucide="send" class="h-4 w-4 mr-2 relative z-10"></i>
+                <span class="relative z-10">Kirim Pesan</span>
+              </button>
+            </form>
+          </div>
+
+          <div class="glassy-card card-border p-6" data-aos="fade-up">
+            <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="info" class="h-5 w-5 text-cyan-300"></i>
+              Informasi Section
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Section ini menyediakan form kontak dan berbagai cara untuk menghubungi tim. ID section: <code class="px-2 py-1 rounded bg-white/10 text-cyan-300">#contact</code>
+            </p>
+            <a href="./home.html#contact" class="btn btn-gradient-outline normal-case btn-sm">
+              Lihat di Home Page
+              <i data-lucide="external-link" class="h-4 w-4 ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary Section -->
+      <section class="section-shell py-20 md:py-32">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+          <div class="glassy-card gradient-cyan card-border p-8 md:p-12 text-center" data-aos="fade-up">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent">
+              Ringkasan Section
+            </h2>
+            <p class="text-lg text-slate-300 mb-8 max-w-3xl mx-auto">
+              Website SitSense terdiri dari 8 section utama yang dirancang untuk memberikan pengalaman pengguna yang optimal. Setiap section memiliki tujuan dan fungsi yang berbeda, namun saling melengkapi untuk menciptakan narasi yang komprehensif tentang produk.
+            </p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div class="text-center">
+                <div class="text-3xl font-bold text-cyan-300 mb-2">8</div>
+                <div class="text-sm text-slate-400">Section Utama</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-purple-300 mb-2">6</div>
+                <div class="text-sm text-slate-400">Fitur Unggulan</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-emerald-300 mb-2">3</div>
+                <div class="text-sm text-slate-400">Solusi Tersedia</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-amber-300 mb-2">100%</div>
+                <div class="text-sm text-slate-400">Responsive</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-4">
+              <a href="./home.html" class="btn btn-gradient-primary normal-case">
+                <i data-lucide="home" class="h-4 w-4 mr-2"></i>
+                Kembali ke Home
+              </a>
+              <a href="./index.html" class="btn btn-gradient-outline normal-case">
+                <i data-lucide="layout-dashboard" class="h-4 w-4 mr-2"></i>
+                Buka Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <div id="footer-slot"></div>
+
+    <!-- Scripts -->
+    <script src="./assets/js/sidebar.js"></script>
+    <script src="./assets/js/ui.js"></script>
+    <script src="./assets/js/image-loader.js"></script>
+    <script>
+      // Load components
+      (async () => {
+        // Load Sidebar
+        const sidebarSlot = document.getElementById('sidebar-slot');
+        if (sidebarSlot) {
+          const sidebarHtml = await (await fetch('./components/sidebar.html')).text();
+          sidebarSlot.innerHTML = sidebarHtml;
+        }
+
+        // Load Header
+        const headerSlot = document.getElementById('header-slot');
+        if (headerSlot) {
+          const headerHtml = await (await fetch('./components/header.html')).text();
+          headerSlot.innerHTML = headerHtml;
+        }
+
+        // Load Footer
+        const footerSlot = document.getElementById('footer-slot');
+        if (footerSlot) {
+          const footerHtml = await (await fetch('./components/footer.html')).text();
+          footerSlot.innerHTML = footerHtml;
+          const yearEl = document.getElementById('footerYear');
+          if (yearEl) yearEl.textContent = new Date().getFullYear();
+        }
+
+        // Initialize icons
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+
+        // Initialize AOS
+        if (window.AOS) {
+          AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true
+          });
+        }
+
+        // Navigation dots active state
+        const updateActiveNav = () => {
+          const sections = document.querySelectorAll('section[id$="-section"]');
+          const navDots = document.querySelectorAll('.nav-dot');
+          
+          let current = '';
+          sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (window.pageYOffset >= sectionTop - 200) {
+              current = section.getAttribute('id');
+            }
+          });
+
+          navDots.forEach(dot => {
+            dot.classList.remove('active');
+            const href = dot.getAttribute('href');
+            if (href && href.includes(current)) {
+              dot.classList.add('active');
+            }
+          });
+        };
+
+        window.addEventListener('scroll', updateActiveNav);
+        updateActiveNav();
+
+        // Smooth scroll for navigation dots
+        document.querySelectorAll('.nav-dot').forEach(dot => {
+          dot.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = dot.getAttribute('href');
+            if (href) {
+              const target = document.querySelector(href);
+              if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
+
