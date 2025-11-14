@@ -18,16 +18,20 @@
   Catatan: Jika field tertentu tidak ada, script akan mencoba menghitung dari yang tersedia atau memberi default.
 */
 (function(){
+  'use strict';
+  
   // ---------------- Utils ----------------
   const $ = (s, r=document)=> r.querySelector(s);
   const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
 
   const fmtTime = (ts)=>{
+    if (!Number.isFinite(ts)) return '--:--';
     const d = new Date(ts);
     const p = (n)=> String(n).padStart(2,'0');
     return `${p(d.getHours())}:${p(d.getMinutes())}`;
   };
   const fmtDate = (ts)=>{
+    if (!Number.isFinite(ts)) return '--';
     const d = new Date(ts); const p=(n)=> String(n).padStart(2,'0');
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
   };
@@ -38,9 +42,21 @@
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
-  function toStartOfDay(ts){ const d=new Date(ts); d.setHours(0,0,0,0); return d.getTime(); }
-  function toStartOfWeek(ts){ const d=new Date(toStartOfDay(ts)); const day=(d.getDay()||7); d.setDate(d.getDate()-(day-1)); return d.getTime(); }
-  function addDays(ts, n){ const d=new Date(ts); d.setDate(d.getDate()+n); return d.getTime(); }
+  function toStartOfDay(ts){ 
+    if (!Number.isFinite(ts)) return Date.now();
+    const d=new Date(ts); d.setHours(0,0,0,0); return d.getTime(); 
+  }
+  function toStartOfWeek(ts){ 
+    if (!Number.isFinite(ts)) return Date.now();
+    const d=new Date(toStartOfDay(ts)); 
+    const day=(d.getDay()||7); 
+    d.setDate(d.getDate()-(day-1)); 
+    return d.getTime(); 
+  }
+  function addDays(ts, n){ 
+    if (!Number.isFinite(ts)) return Date.now();
+    const d=new Date(ts); d.setDate(d.getDate()+n); return d.getTime(); 
+  }
   function clamp(val, a, b){ return Math.max(a, Math.min(b, val)); }
 
   // ---------------- State ----------------
@@ -49,24 +65,74 @@
     page: 1,
     pageSize: 10,
     charts: { pressure: null, quality: null },
+    isLoading: false,
+    _lastAgg: null,
   };
 
   // ---------------- Fetch data ----------------
   async function fetchSessions(range){
     // range: { from: ms, to: ms }
-    const isDemo = /[?&]demo=1\b/.test(location.search) || !window.firebase;
-    if (isDemo) return demoSessions(range);
+    if (!range || !Number.isFinite(range.from) || !Number.isFinite(range.to)) {
+      console.warn('[SitSense] Invalid range provided');
+      return [];
+    }
+
+    // Check for demo mode
+    const isDemo = /[?&]demo=1\b/.test(location.search) || 
+                   !window.firebase || 
+                   !window.firebase.database ||
+                   !window.__SITSENSE_FIREBASE_READY__;
+    
+    if (isDemo) {
+      console.info('[SitSense] Running in DEMO mode');
+      return demoSessions(range);
+    }
 
     try{
       const db = firebase.database();
+      if (!db) {
+        console.warn('[SitSense] Firebase database not available, using demo data');
+        return demoSessions(range);
+      }
+
       const ref = db.ref('/history/sessions');
-      const snap = await ref.orderByChild('startTs').startAt(range.from).endAt(range.to + 86400000 - 1).get();
+      if (!ref) {
+        console.warn('[SitSense] Cannot access /history/sessions, using demo data');
+        return demoSessions(range);
+      }
+
+      // Query dengan range waktu
+      const endTime = range.to + 86400000 - 1; // sampai akhir hari
+      const snap = await ref.orderByChild('startTs')
+                            .startAt(range.from)
+                            .endAt(endTime)
+                            .once('value');
+      
       const val = snap.val() || {};
-      const list = Object.keys(val).map(id => ({ id, ...val[id] }))
-        .filter(x => Number.isFinite(x.startTs) && Number.isFinite(x.endTs))
-        .sort((a,b)=> a.startTs - b.startTs);
+      const list = Object.keys(val).map(id => {
+        const session = val[id];
+        return { 
+          id, 
+          startTs: Number(session.startTs) || 0,
+          endTs: Number(session.endTs) || 0,
+          avgPressure: Number(session.avgPressure) || null,
+          avgScore: Number(session.avgScore) || null,
+          goodCount: Number(session.goodCount) || 0,
+          badCount: Number(session.badCount) || 0,
+          alerts: Number(session.alerts) || 0,
+          note: String(session.note || '')
+        };
+      })
+      .filter(x => Number.isFinite(x.startTs) && Number.isFinite(x.endTs) && x.startTs > 0 && x.endTs > x.startTs)
+      .sort((a,b)=> a.startTs - b.startTs);
+      
+      console.info(`[SitSense] Fetched ${list.length} sessions from Firebase`);
       return list;
-    } catch(e){ console.warn('[SitSense] history fetch error:', e); return []; }
+    } catch(e){ 
+      console.error('[SitSense] history fetch error:', e); 
+      window.SitSenseUI?.showToast?.('Gagal memuat data dari Firebase. Menggunakan data demo.', 'warn');
+      return demoSessions(range); 
+    }
   }
 
   function demoSessions(range){
@@ -106,9 +172,16 @@
 
       // bucket key
       let key;
-      if (agg === 'hour') key = toStartOfDay(s.startTs) + Math.floor(new Date(s.startTs).getHours());
-      else if (agg === 'week') key = toStartOfWeek(s.startTs);
-      else key = toStartOfDay(s.startTs); // day
+      if (agg === 'hour') {
+        const dayStart = toStartOfDay(s.startTs);
+        const hour = new Date(s.startTs).getHours();
+        // Use string key format: "timestamp_hour" for proper sorting
+        key = `${dayStart}_${hour}`;
+      } else if (agg === 'week') {
+        key = toStartOfWeek(s.startTs);
+      } else {
+        key = toStartOfDay(s.startTs); // day
+      }
 
       if (!buckets.has(key)) buckets.set(key, { n:0, pressureSum:0, scoreSum:0 });
       const b = buckets.get(key);
@@ -122,7 +195,16 @@
     }
 
     const labels = []; const pressureVals = [];
-    const keys = Array.from(buckets.keys()).sort((a,b)=> a-b);
+    const keys = Array.from(buckets.keys()).sort((a,b)=> {
+      // Handle hour aggregation keys (string format)
+      if (agg === 'hour' && typeof a === 'string' && typeof b === 'string') {
+        const [aTs, aH] = a.split('_').map(Number);
+        const [bTs, bH] = b.split('_').map(Number);
+        if (aTs !== bTs) return aTs - bTs;
+        return aH - bH;
+      }
+      return Number(a) - Number(b);
+    });
     for (const k of keys){
       const b = buckets.get(k);
       const avgP = b.n ? (b.pressureSum/b.n) : 0;
@@ -143,22 +225,28 @@
 
   function formatBucketLabel(key, agg){
     if (agg==='hour'){
-      const day = Math.floor(key);
-      const hour = Math.round((key - day));
-      const d = new Date(day);
-      const p=(n)=> String(n).padStart(2,'0');
-      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(hour)}:00`;
+      // key format: "timestamp_hour"
+      if (typeof key === 'string' && key.includes('_')) {
+        const [timestamp, hour] = key.split('_').map(Number);
+        const d = new Date(timestamp);
+        const p=(n)=> String(n).padStart(2,'0');
+        return `${p(d.getDate())}/${p(d.getMonth()+1)} ${p(hour)}:00`;
+      }
+      return '--';
     }
     if (agg==='week'){
+      if (!Number.isFinite(key)) return '--';
       const d = new Date(key);
       const p=(n)=> String(n).padStart(2,'0');
       const end = addDays(key, 6);
       const de = new Date(end);
       return `${p(d.getDate())}/${p(d.getMonth()+1)}–${p(de.getDate())}/${p(de.getMonth()+1)}`;
     }
+    // day
+    if (!Number.isFinite(key)) return '--';
     const d = new Date(key);
     const p=(n)=> String(n).padStart(2,'0');
-    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+    return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;
   }
 
   // ---------------- Charts ----------------
@@ -173,18 +261,111 @@
   }
   function initCharts(){
     const t = theme();
-    const hp = $('#historyPressure'); const hq = $('#historyQuality');
-    if (!hp || !hq || !window.Chart) return;
-    const ctxP = hp.getContext('2d');
-    STATE.charts.pressure = new Chart(ctxP, {
-      type: 'line', data: { labels: [], datasets: [{ label: 'Tekanan rata-rata', data: [], borderColor: t.accent, backgroundColor: 'transparent', tension: 0.25, pointRadius: 2, borderWidth: 2 }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{mode:'index', intersect:false} }, scales:{ x:{ grid:{ color:t.grid }, ticks:{ color:t.tick } }, y:{ beginAtZero:true, grid:{ color:t.grid }, ticks:{ color:t.tick } } } }
-    });
-    const ctxQ = hq.getContext('2d');
-    STATE.charts.quality = new Chart(ctxQ, {
-      type: 'doughnut', data: { labels:['Baik','Perlu Koreksi','Buruk'], datasets:[{ data:[0,0,0], backgroundColor:[t.good,t.warn,t.bad], borderColor:'transparent' }] },
-      options:{ responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{ position:'bottom', labels:{ color:t.tick, boxWidth:10 } } } }
-    });
+    const hp = $('#historyPressure'); 
+    const hq = $('#historyQuality');
+    
+    if (!hp || !hq || !window.Chart) {
+      console.warn('[SitSense] Charts not initialized: missing canvas or Chart.js');
+      return;
+    }
+
+    // Destroy existing charts if they exist
+    if (STATE.charts.pressure) {
+      STATE.charts.pressure.destroy();
+      STATE.charts.pressure = null;
+    }
+    if (STATE.charts.quality) {
+      STATE.charts.quality.destroy();
+      STATE.charts.quality = null;
+    }
+
+    try {
+      const ctxP = hp.getContext('2d');
+      STATE.charts.pressure = new Chart(ctxP, {
+        type: 'line', 
+        data: { 
+          labels: [], 
+          datasets: [{ 
+            label: 'Tekanan rata-rata', 
+            data: [], 
+            borderColor: t.accent, 
+            backgroundColor: t.accent + '20', 
+            fill: true,
+            tension: 0.4, 
+            pointRadius: 3, 
+            pointHoverRadius: 5,
+            borderWidth: 2 
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false }, 
+            tooltip: { 
+              mode: 'index', 
+              intersect: false,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: t.accent,
+              borderWidth: 1
+            } 
+          }, 
+          scales: { 
+            x: { 
+              grid: { color: t.grid }, 
+              ticks: { color: t.tick, maxRotation: 45, minRotation: 0 } 
+            }, 
+            y: { 
+              beginAtZero: true, 
+              max: 100,
+              grid: { color: t.grid }, 
+              ticks: { color: t.tick } 
+            } 
+          } 
+        }
+      });
+
+      const ctxQ = hq.getContext('2d');
+      STATE.charts.quality = new Chart(ctxQ, {
+        type: 'doughnut', 
+        data: { 
+          labels: ['Baik (≥75)', 'Perlu Koreksi (50-74)', 'Buruk (<50)'], 
+          datasets: [{ 
+            data: [0, 0, 0], 
+            backgroundColor: [t.good, t.warn, t.bad], 
+            borderColor: 'transparent',
+            borderWidth: 0
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          cutout: '68%', 
+          plugins: { 
+            legend: { 
+              position: 'bottom', 
+              labels: { 
+                color: t.tick, 
+                boxWidth: 12,
+                padding: 12,
+                font: { size: 12 }
+              } 
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: t.accent,
+              borderWidth: 1
+            }
+          } 
+        }
+      });
+    } catch (e) {
+      console.error('[SitSense] Error initializing charts:', e);
+    }
   }
   function updateCharts(aggData){
     if (!STATE.charts.pressure || !STATE.charts.quality) return;
@@ -206,8 +387,19 @@
   }
 
   function renderTable(sessions){
-    const body = $('#historyTableBody'); if (!body) return;
-    if (!sessions.length){ body.innerHTML = `<tr><td colspan="9" class="text-center text-slate-400">Tidak ada data</td></tr>`; $('#historySummary').textContent = 'Menampilkan 0 sesi'; return; }
+    const body = $('#historyTableBody'); 
+    if (!body) return;
+    
+    if (!sessions || !sessions.length) { 
+      body.innerHTML = `<tr><td colspan="9" class="text-center text-slate-400 py-8">
+        <i data-lucide="inbox" class="h-8 w-8 mx-auto mb-2 text-slate-500"></i>
+        <p>Tidak ada data untuk rentang waktu yang dipilih</p>
+      </td></tr>`; 
+      if (window.lucide) window.lucide.createIcons();
+      const summary = $('#historySummary');
+      if (summary) summary.textContent = 'Menampilkan 0 sesi'; 
+      return; 
+    }
 
     const start = (STATE.page-1)*STATE.pageSize;
     const pageItems = sessions.slice(start, start+STATE.pageSize);
@@ -215,66 +407,192 @@
     body.innerHTML = pageItems.map(s=>{
       const durSec = Math.max(0, Math.floor((s.endTs - s.startTs)/1000));
       const dateStr = fmtDate(s.startTs);
-      const note = s.note ? s.note.replace(/[<>]/g,'') : '';
-      const safeScore = Number.isFinite(s.avgScore) ? s.avgScore : '-';
+      const note = s.note ? String(s.note).replace(/[<>]/g,'').substring(0, 50) : '';
+      const safeScore = Number.isFinite(s.avgScore) ? Math.round(s.avgScore) : '-';
       const safeGood = Number.isFinite(s.goodCount) ? s.goodCount : 0;
       const safeBad  = Number.isFinite(s.badCount) ? s.badCount  : 0;
-      return `<tr class="hover">
-        <td>${dateStr}</td>
+      
+      // Color coding untuk skor
+      let scoreClass = '';
+      if (Number.isFinite(s.avgScore)) {
+        if (s.avgScore >= 75) scoreClass = 'text-emerald-400';
+        else if (s.avgScore >= 50) scoreClass = 'text-yellow-400';
+        else scoreClass = 'text-rose-400';
+      }
+      
+      return `<tr class="hover cursor-pointer" data-session-id="${s.id || ''}">
+        <td class="font-medium">${dateStr}</td>
         <td>${fmtTime(s.startTs)}</td>
         <td>${fmtTime(s.endTs)}</td>
         <td>${fmtDur(durSec)}</td>
-        <td>${safeScore}</td>
-        <td>${safeGood}</td>
-        <td>${safeBad}</td>
-        <td>${s.alerts||0}</td>
-        <td>${note}</td>
+        <td class="${scoreClass} font-semibold">${safeScore}</td>
+        <td class="text-emerald-400">${safeGood}</td>
+        <td class="text-rose-400">${safeBad}</td>
+        <td class="text-yellow-400">${s.alerts||0}</td>
+        <td class="text-sm text-slate-400">${note || '-'}</td>
       </tr>`;
     }).join('');
 
     const total = sessions.length;
     const end = Math.min(start + STATE.pageSize, total);
-    $('#historySummary').textContent = `Menampilkan ${start+1}–${end} dari ${total} sesi`;
+    const summary = $('#historySummary');
+    if (summary) {
+      summary.textContent = `Menampilkan ${start+1}–${end} dari ${total} sesi`;
+    }
 
     // Pagination buttons
-    $('#prevPage').disabled = (STATE.page<=1);
-    $('#nextPage').disabled = (end>=total);
+    const prevBtn = $('#prevPage');
+    const nextBtn = $('#nextPage');
+    if (prevBtn) prevBtn.disabled = (STATE.page<=1);
+    if (nextBtn) nextBtn.disabled = (end>=total);
+
+    // Add click handlers for row details (optional)
+    body.querySelectorAll('tr[data-session-id]').forEach(row => {
+      row.addEventListener('click', function() {
+        const sessionId = this.getAttribute('data-session-id');
+        if (sessionId) {
+          console.log('[SitSense] Session clicked:', sessionId);
+          // Bisa ditambahkan modal detail sesi di sini
+        }
+      });
+    });
   }
 
   // ---------------- Export CSV ----------------
   function exportCSV(sessions){
-    const header = ['Tanggal','Mulai','Selesai','Durasi','SkorRata','Baik','Buruk','Peringatan','Catatan'];
-    const rows = sessions.map(s=>{
-      const durSec = Math.max(0, Math.floor((s.endTs - s.startTs)/1000));
-      return [
-        fmtDate(s.startTs), fmtTime(s.startTs), fmtTime(s.endTs), fmtDur(durSec),
-        Number.isFinite(s.avgScore)?s.avgScore:'', s.goodCount||0, s.badCount||0, s.alerts||0,
-        (s.note||'').replace(/\n/g,' ').replace(/"/g,'""')
-      ];
-    });
-    const csv = [header].concat(rows).map(r=> r.map(x=>`"${String(x)}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download=`sitsense-history-${Date.now()}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    if (!sessions || !sessions.length) {
+      window.SitSenseUI?.showToast?.('Tidak ada data untuk diekspor', 'warn');
+      return;
+    }
+
+    try {
+      const header = ['Tanggal','Mulai','Selesai','Durasi (detik)','Skor Rata-rata','Baik','Buruk','Peringatan','Catatan'];
+      const rows = sessions.map(s=>{
+        const durSec = Math.max(0, Math.floor((s.endTs - s.startTs)/1000));
+        return [
+          fmtDate(s.startTs), 
+          fmtTime(s.startTs), 
+          fmtTime(s.endTs), 
+          durSec,
+          Number.isFinite(s.avgScore) ? Math.round(s.avgScore) : '', 
+          s.goodCount||0, 
+          s.badCount||0, 
+          s.alerts||0,
+          (s.note||'').replace(/\n/g,' ').replace(/"/g,'""')
+        ];
+      });
+      
+      // Add BOM for Excel compatibility
+      const BOM = '\uFEFF';
+      const csv = BOM + [header].concat(rows).map(r=> 
+        r.map(x=> `"${String(x).replace(/"/g,'""')}"`).join(',')
+      ).join('\n');
+      
+      const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = `sitsense-history-${new Date().toISOString().slice(0,10)}.csv`; 
+      document.body.appendChild(a); 
+      a.click(); 
+      document.body.removeChild(a); 
+      URL.revokeObjectURL(url);
+      
+      window.SitSenseUI?.showToast?.('Data berhasil diekspor', 'success');
+    } catch (e) {
+      console.error('[SitSense] Export CSV error:', e);
+      window.SitSenseUI?.showToast?.('Gagal mengekspor data', 'error');
+    }
   }
 
   // ---------------- Controller ----------------
   async function applyFilters(){
-    if (window.NProgress) NProgress.start();
-    try{
-      const fd = $('#fromDate').value; const td = $('#toDate').value; const agg = $('#agg').value || 'day';
-      if (!fd || !td){ window.SitSenseUI?.showToast?.('Pilih tanggal terlebih dahulu','warn'); return; }
-      const from = new Date(fd+'T00:00:00').getTime();
-      const to = new Date(td+'T23:59:59').getTime();
+    if (STATE.isLoading) return; // Prevent multiple simultaneous requests
+    
+    STATE.isLoading = true;
+    const btn = $('#btnFetchHistory');
+    const originalText = btn ? btn.innerHTML : '';
+    
+    try {
+      if (window.NProgress) NProgress.start();
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Memuat...';
+      }
+
+      const fd = $('#fromDate');
+      const td = $('#toDate');
+      const agg = $('#agg');
+      
+      if (!fd || !td || !agg) {
+        window.SitSenseUI?.showToast?.('Elemen form tidak ditemukan', 'error');
+        return;
+      }
+
+      const fromDate = fd.value;
+      const toDate = td.value;
+      const aggregation = agg.value || 'day';
+      
+      if (!fromDate || !toDate) {
+        window.SitSenseUI?.showToast?.('Pilih tanggal terlebih dahulu', 'warn');
+        return;
+      }
+
+      // Validate date range
+      const from = new Date(fromDate + 'T00:00:00').getTime();
+      const to = new Date(toDate + 'T23:59:59').getTime();
+      
+      if (isNaN(from) || isNaN(to)) {
+        window.SitSenseUI?.showToast?.('Format tanggal tidak valid', 'error');
+        return;
+      }
+
+      if (from > to) {
+        window.SitSenseUI?.showToast?.('Tanggal mulai harus sebelum tanggal akhir', 'warn');
+        return;
+      }
+
+      // Check if range is too large (optional: limit to 90 days)
+      const daysDiff = Math.ceil((to - from) / (1000 * 60 * 60 * 24));
+      if (daysDiff > 90) {
+        window.SitSenseUI?.showToast?.('Rentang maksimal 90 hari. Memuat data terbatas...', 'warn');
+      }
+
       const sessions = await fetchSessions({ from, to });
       STATE.sessions = sessions;
       STATE.page = 1;
-      const aggData = aggregate(sessions, agg); STATE._lastAgg = aggData;
+      
+      const aggData = aggregate(sessions, aggregation); 
+      STATE._lastAgg = aggData;
+      
       updateKPI(aggData.kpi);
-      initCharts();
+      
+      // Initialize charts if not already done
+      if (!STATE.charts.pressure || !STATE.charts.quality) {
+        initCharts();
+      }
+      
       updateCharts(aggData);
       renderTable(STATE.sessions);
-    } finally { if (window.NProgress) NProgress.done(); }
+      
+      // Show success message
+      if (sessions.length > 0) {
+        window.SitSenseUI?.showToast?.(`Memuat ${sessions.length} sesi`, 'success');
+      } else {
+        window.SitSenseUI?.showToast?.('Tidak ada data untuk rentang waktu ini', 'info');
+      }
+      
+    } catch (e) {
+      console.error('[SitSense] applyFilters error:', e);
+      window.SitSenseUI?.showToast?.('Terjadi kesalahan saat memuat data', 'error');
+    } finally { 
+      STATE.isLoading = false;
+      if (window.NProgress) NProgress.done();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText || '<span class="relative z-10">Terapkan</span>';
+      }
+    }
   }
 
   function wire(){
@@ -285,8 +603,47 @@
   }
 
   // ---------------- Boot ----------------
-  document.addEventListener('DOMContentLoaded', ()=>{
-    try { wire(); } catch(_) {}
-    try { applyFilters(); } catch(_) {}
-  });
+  function initialize(){
+    try {
+      wire();
+      
+      // Wait for Firebase to be ready
+      const checkFirebase = setInterval(() => {
+        if (window.__SITSENSE_FIREBASE_READY__ || window.firebase) {
+          clearInterval(checkFirebase);
+          // Auto-load data on page load
+          setTimeout(() => {
+            try {
+              applyFilters();
+            } catch (e) {
+              console.warn('[SitSense] Auto-load failed:', e);
+            }
+          }, 500);
+        }
+      }, 100);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        clearInterval(checkFirebase);
+        if (!window.__SITSENSE_FIREBASE_READY__ && !window.firebase) {
+          console.info('[SitSense] Firebase not ready, will use demo mode');
+          try {
+            applyFilters();
+          } catch (e) {
+            console.warn('[SitSense] Auto-load failed:', e);
+          }
+        }
+      }, 5000);
+      
+    } catch (e) {
+      console.error('[SitSense] Initialization error:', e);
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
 })();
