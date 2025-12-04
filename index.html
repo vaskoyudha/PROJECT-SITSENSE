@@ -1,440 +1,517 @@
 <!doctype html>
 <html lang="id" data-theme="dark">
-  <head>
-    <!-- Redirect Script - HARUS di paling atas untuk memastikan redirect sebelum halaman dimuat -->
-    <script>
-      // Immediate redirect check - harus dijalankan SEBELUM semua resource dimuat
-      (function() {
-        try {
-          // Baca URL components
-          var href = window.location.href;
-          var pathname = window.location.pathname || '';
-          var search = window.location.search || '';
-          var hash = window.location.hash || '';
-          
-          console.log('Redirect check - URL:', href, 'Search:', search);
-          
-          // PRIORITAS 1: Cek query parameter ?launched=true TERLEBIH DAHULU
-          var hasLaunchedParam = false;
-          if (search) {
-            // Cek dengan berbagai cara untuk memastikan
-            if (search.indexOf('launched=true') !== -1) {
-              hasLaunchedParam = true;
-            } else if (window.URLSearchParams) {
-              try {
-                var params = new URLSearchParams(search);
-                hasLaunchedParam = params.get('launched') === 'true';
-              } catch(e) {
-                // Fallback ke indexOf
-                hasLaunchedParam = search.indexOf('launched=true') !== -1;
-              }
-            }
-          }
-          
-          console.log('Has launched param:', hasLaunchedParam);
-          
-          // Jika ada parameter launched=true, set sessionStorage dan LANJUTKAN (jangan redirect)
-          if (hasLaunchedParam) {
+
+<head>
+  <!-- Redirect Script - HARUS di paling atas untuk memastikan redirect sebelum halaman dimuat -->
+  <script>
+    // Immediate redirect check - harus dijalankan SEBELUM semua resource dimuat
+    (function () {
+      try {
+        // Baca URL components
+        var href = window.location.href;
+        var pathname = window.location.pathname || '';
+        var search = window.location.search || '';
+        var hash = window.location.hash || '';
+
+        console.log('Redirect check - URL:', href, 'Search:', search);
+
+        // PRIORITAS 1: Cek query parameter ?launched=true TERLEBIH DAHULU
+        var hasLaunchedParam = false;
+        if (search) {
+          // Cek dengan berbagai cara untuk memastikan
+          if (search.indexOf('launched=true') !== -1) {
+            hasLaunchedParam = true;
+          } else if (window.URLSearchParams) {
             try {
-              sessionStorage.setItem('sitsense-app-launched', 'true');
-              console.log('SessionStorage set to true');
-              
-              // Hapus query parameter dari URL untuk clean URL (tapi jangan redirect)
-              if (window.history && window.history.replaceState) {
-                var cleanUrl = window.location.origin + pathname + hash;
-                window.history.replaceState({}, document.title, cleanUrl);
-              }
-              // KELUAR dari function - jangan redirect, biarkan halaman load
-              return;
-            } catch(e) {
-              console.warn('Failed to set sessionStorage:', e);
-              // Tetap lanjutkan meskipun sessionStorage error
-              return;
+              var params = new URLSearchParams(search);
+              hasLaunchedParam = params.get('launched') === 'true';
+            } catch (e) {
+              // Fallback ke indexOf
+              hasLaunchedParam = search.indexOf('launched=true') !== -1;
             }
           }
-          
-          // PRIORITAS 2: Cek apakah sudah di home.html - jika ya, jangan redirect
-          var isOnHomePage = href.indexOf('home.html') !== -1 || pathname.indexOf('home.html') !== -1;
-          if (isOnHomePage) {
-            console.log('Already on home page, no redirect');
+        }
+
+        console.log('Has launched param:', hasLaunchedParam);
+
+        // Jika ada parameter launched=true, set sessionStorage dan LANJUTKAN (jangan redirect)
+        if (hasLaunchedParam) {
+          try {
+            sessionStorage.setItem('sitsense-app-launched', 'true');
+            console.log('SessionStorage set to true');
+
+            // Hapus query parameter dari URL untuk clean URL (tapi jangan redirect)
+            if (window.history && window.history.replaceState) {
+              var cleanUrl = window.location.origin + pathname + hash;
+              window.history.replaceState({}, document.title, cleanUrl);
+            }
+            // KELUAR dari function - jangan redirect, biarkan halaman load
+            return;
+          } catch (e) {
+            console.warn('Failed to set sessionStorage:', e);
+            // Tetap lanjutkan meskipun sessionStorage error
             return;
           }
-          
-          // PRIORITAS 3: Cek apakah ini index/root page
-          var isIndexOrRoot = false;
-          if (!pathname || pathname === '/' || pathname === '') {
+        }
+
+        // PRIORITAS 2: Cek apakah sudah di home.html - jika ya, jangan redirect
+        var isOnHomePage = href.indexOf('home.html') !== -1 || pathname.indexOf('home.html') !== -1;
+        if (isOnHomePage) {
+          console.log('Already on home page, no redirect');
+          return;
+        }
+
+        // PRIORITAS 3: Cek apakah ini index/root page
+        var isIndexOrRoot = false;
+        if (!pathname || pathname === '/' || pathname === '') {
+          isIndexOrRoot = true;
+        } else {
+          var segments = pathname.split('/').filter(function (s) { return s && s.length > 0; });
+          var lastSegment = segments.length > 0 ? segments[segments.length - 1].toLowerCase() : '';
+          if (lastSegment === 'index.html' || lastSegment === '' || pathname.endsWith('/')) {
             isIndexOrRoot = true;
-          } else {
-            var segments = pathname.split('/').filter(function(s) { return s && s.length > 0; });
-            var lastSegment = segments.length > 0 ? segments[segments.length - 1].toLowerCase() : '';
-            if (lastSegment === 'index.html' || lastSegment === '' || pathname.endsWith('/')) {
-              isIndexOrRoot = true;
-            }
-          }
-          
-          console.log('Is index or root:', isIndexOrRoot);
-          
-          // Jika ini index/root, cek sessionStorage
-          if (isIndexOrRoot) {
-            var hasLaunched = false;
-            try {
-              var stored = sessionStorage.getItem('sitsense-app-launched');
-              hasLaunched = stored === 'true';
-              console.log('SessionStorage value:', stored, 'Has launched:', hasLaunched);
-            } catch(e) {
-              console.warn('SessionStorage not available:', e);
-              // Jika sessionStorage tidak tersedia, anggap belum launch dan redirect
-              hasLaunched = false;
-            }
-            
-            // Jika belum launch, redirect ke home
-            if (!hasLaunched) {
-              console.log('Redirecting to home.html');
-              var homeUrl = 'home.html' + hash;
-              
-              // Redirect immediately
-              window.location.replace(homeUrl);
-              // Prevent further execution
-              return;
-            } else {
-              console.log('Has launched flag, staying on index.html');
-            }
-          }
-        } catch(e) {
-          console.error('Redirect check error:', e);
-          // Jika terjadi error, default: jika tidak di home.html, redirect ke home
-          try {
-            if (window.location.pathname && window.location.pathname.indexOf('home.html') === -1) {
-              if (window.location.pathname.indexOf('index.html') !== -1 || 
-                  window.location.pathname === '/' || 
-                  window.location.pathname.endsWith('/')) {
-                window.location.replace('home.html');
-              }
-            }
-          } catch(e2) {
-            console.error('Fallback redirect failed:', e2);
           }
         }
-      })();
-    </script>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SitSense — Dashboard</title>
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        console.log('Is index or root:', isIndexOrRoot);
 
-    <!-- Tailwind + DaisyUI -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+        // Jika ini index/root, cek sessionStorage
+        if (isIndexOrRoot) {
+          var hasLaunched = false;
+          try {
+            var stored = sessionStorage.getItem('sitsense-app-launched');
+            hasLaunched = stored === 'true';
+            console.log('SessionStorage value:', stored, 'Has launched:', hasLaunched);
+          } catch (e) {
+            console.warn('SessionStorage not available:', e);
+            // Jika sessionStorage tidak tersedia, anggap belum launch dan redirect
+            hasLaunched = false;
+          }
 
-    <!-- Icons, Animations, Charts -->
-    <script src="https://unpkg.com/lucide@latest" defer></script>
-    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
-    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+          // Jika belum launch, redirect ke home
+          if (!hasLaunched) {
+            console.log('Redirecting to home.html');
+            var homeUrl = 'home.html' + hash;
 
-    <!-- Notifications & Progress (optional, used later) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress/nprogress.css" />
-    <script src="https://cdn.jsdelivr.net/npm/nprogress/nprogress.js" defer></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js" defer></script>
+            // Redirect immediately
+            window.location.replace(homeUrl);
+            // Prevent further execution
+            return;
+          } else {
+            console.log('Has launched flag, staying on index.html');
+          }
+        }
+      } catch (e) {
+        console.error('Redirect check error:', e);
+        // Jika terjadi error, default: jika tidak di home.html, redirect ke home
+        try {
+          if (window.location.pathname && window.location.pathname.indexOf('home.html') === -1) {
+            if (window.location.pathname.indexOf('index.html') !== -1 ||
+              window.location.pathname === '/' ||
+              window.location.pathname.endsWith('/')) {
+              window.location.replace('home.html');
+            }
+          }
+        } catch (e2) {
+          console.error('Fallback redirect failed:', e2);
+        }
+      }
+    })();
+  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SitSense — Dashboard</title>
 
-    <!-- Firebase (compat for simplicity / already used in your project) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-    <script src="./assets/js/firebase-config.js"></script>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Tailwind + DaisyUI -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <link rel="stylesheet" href="./assets/css/styles.css" />
-    <link rel="stylesheet" href="./assets/css/theme.css" />
-    <script src="./assets/js/image-loader.js"></script>
-    <style>
-      /* Custom Gradient Button Styles */
-      .btn-gradient-primary {
-        background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #10b981 100%);
-        background-size: 200% 200%;
-        border: none;
-        color: white;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);
-        transform-origin: center;
-        will-change: background-position, box-shadow, transform;
-      }
-      
-      .btn-gradient-primary::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        transition: left 0.6s ease;
-        z-index: 1;
-      }
-      
-      .btn-gradient-primary:hover {
-        background-position: 100% 0;
-        box-shadow: 
-          0 8px 30px rgba(6, 182, 212, 0.6),
-          0 0 50px rgba(139, 92, 246, 0.5),
-          0 0 70px rgba(16, 185, 129, 0.4),
-          0 12px 40px rgba(0, 0, 0, 0.4);
-        transform: translateY(-2px) scale(1.02);
-      }
-      
-      .btn-gradient-primary:hover::before {
-        left: 100%;
-      }
-      
-      .btn-gradient-primary:active {
-        transform: translateY(0) scale(0.98);
-        transition: transform 0.1s;
-      }
-      
-      .btn-gradient-primary .relative {
-        position: relative;
-        z-index: 2;
+  <!-- Icons, Animations, Charts -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+
+  <!-- Notifications & Progress (optional, used later) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress/nprogress.css" />
+  <script src="https://cdn.jsdelivr.net/npm/nprogress/nprogress.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js" defer></script>
+
+  <!-- Firebase (compat for simplicity / already used in your project) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="./assets/js/firebase-config.js"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/theme.css" />
+  <script src="./assets/js/image-loader.js"></script>
+  <script src="./assets/js/time-scale.js"></script>
+  <style>
+    /* Custom Gradient Button Styles */
+    .btn-gradient-primary {
+      background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #10b981 100%);
+      background-size: 200% 200%;
+      border: none;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3), 0 0 20px rgba(139, 92, 246, 0.2);
+      transform-origin: center;
+      will-change: background-position, box-shadow, transform;
+    }
+
+    .btn-gradient-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.6s ease;
+      z-index: 1;
+    }
+
+    .btn-gradient-primary:hover {
+      background-position: 100% 0;
+      box-shadow:
+        0 8px 30px rgba(6, 182, 212, 0.6),
+        0 0 50px rgba(139, 92, 246, 0.5),
+        0 0 70px rgba(16, 185, 129, 0.4),
+        0 12px 40px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .btn-gradient-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-gradient-primary:active {
+      transform: translateY(0) scale(0.98);
+      transition: transform 0.1s;
+    }
+
+    .btn-gradient-primary .relative {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Animated background gradient for dashboard */
+    .animated-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(1200px 800px at 10% 20%, rgba(6, 182, 212, 0.18), transparent 60%),
+        radial-gradient(900px 700px at 90% 10%, rgba(139, 92, 246, 0.16), transparent 60%),
+        radial-gradient(1000px 900px at 30% 90%, rgba(16, 185, 129, 0.16), transparent 60%);
+      filter: blur(0px);
+      animation: bgFloatA 22s ease-in-out infinite alternate, bgFloatB 28s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes bgFloatA {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
       }
 
-      /* Animated background gradient for dashboard */
-      .animated-bg {
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        background: radial-gradient(1200px 800px at 10% 20%, rgba(6,182,212,0.18), transparent 60%),
-                    radial-gradient(900px 700px at 90% 10%, rgba(139,92,246,0.16), transparent 60%),
-                    radial-gradient(1000px 900px at 30% 90%, rgba(16,185,129,0.16), transparent 60%);
-        filter: blur(0px);
-        animation: bgFloatA 22s ease-in-out infinite alternate, bgFloatB 28s ease-in-out infinite alternate-reverse;
-      }
-      @keyframes bgFloatA {
-        0%   { transform: translate3d(0, 0, 0) scale(1); }
-        50%  { transform: translate3d(0px, -20px, 0) scale(1.02); }
-        100% { transform: translate3d(0px, 30px, 0) scale(1.03); }
-      }
-      @keyframes bgFloatB {
-        0%   { filter: hue-rotate(0deg) saturate(100%); }
-        50%  { filter: hue-rotate(10deg) saturate(115%); }
-        100% { filter: hue-rotate(-10deg) saturate(110%); }
+      50% {
+        transform: translate3d(0px, -20px, 0) scale(1.02);
       }
 
-      /* Pastikan main container tidak memotong glow */
-      main {
-        overflow: visible !important;
+      100% {
+        transform: translate3d(0px, 30px, 0) scale(1.03);
       }
-      
-      /* Wrapper untuk hero section dengan padding untuk glow */
-      .hero-wrapper {
-        padding: 50px;
-        margin: -50px;
-        position: relative;
-        overflow: visible;
-      }
-      
-      /* Outer glow effect on hover for hero section */
-      .hero-section {
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        z-index: 1;
-      }
-      
-      /* Glow effect di luar card - menggunakan pseudo-element pada wrapper */
-      .hero-wrapper::before {
-        content: '';
-        position: absolute;
-        top: 50px;
-        left: 50px;
-        right: 50px;
-        bottom: 50px;
-        border-radius: 1.5rem;
-        background: transparent;
-        opacity: 0;
-        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: -1;
-        pointer-events: none;
-        box-shadow: 
-          0 0 50px rgba(6, 182, 212, 0.6),
-          0 0 100px rgba(139, 92, 246, 0.5),
-          0 0 150px rgba(16, 185, 129, 0.4),
-          0 0 200px rgba(6, 182, 212, 0.3);
-      }
-      
-      .hero-wrapper:hover .hero-section {
-        transform: translateY(-2px);
-      }
-      
-      .hero-wrapper:hover::before {
-        opacity: 1;
-      }
-    </style>
-  </head>
-  <body class="min-h-screen text-slate-100">
-    <div class="animated-bg"></div>
-    <!-- ================= WELCOME SPLASH ================= -->
-    <div x-data="{ show: true }" x-init="setTimeout(()=>show=false, 2200)" x-show="show"
-         x-transition.opacity.duration.500ms
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b1220]">
-      <div class="relative w-[min(680px,92vw)] rounded-3xl p-8 md:p-10 text-center shadow-2xl overflow-hidden glassy-card" data-aos="zoom-in">
-        <div class="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-cyan-500/20 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-28 -right-16 w-80 h-80 rounded-full bg-emerald-400/20 blur-3xl"></div>
+    }
 
-        <!-- Logo placement -->
-        <img data-image-base="logo-sitsense" alt="SitSense Logo" class="mx-auto h-16 md:h-20 w-auto mb-5" />
+    @keyframes bgFloatB {
+      0% {
+        filter: hue-rotate(0deg) saturate(100%);
+      }
 
-        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
-          Selamat Datang, <span class="text-cyan-400" data-profile-name>Pengguna</span>
-        </h1>
-        <p class="mt-3 text-slate-300/90">Pemantau postur duduk cerdas. Lebih nyaman, sehat, dan produktif.</p>
+      50% {
+        filter: hue-rotate(10deg) saturate(115%);
+      }
 
-        <div class="mt-6 flex items-center justify-center gap-2 text-sm text-slate-300/80">
-          <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            <i data-lucide="wifi" class="h-4 w-4"></i>
-            Wi‑Fi: menyiapkan…
-          </span>
-          <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            <i data-lucide="badge-check" class="h-4 w-4"></i>
-            Auth: inisialisasi…
-          </span>
-        </div>
+      100% {
+        filter: hue-rotate(-10deg) saturate(110%);
+      }
+    }
 
-        <div class="mt-7">
-          <button @click="show=false" class="btn btn-gradient-primary normal-case px-6 relative">
-            <span class="relative z-10">Masuk Dashboard</span>
-          </button>
-        </div>
-        <div class="mt-6 text-xs text-slate-400">© <span class="font-medium text-slate-300">SitSense</span> — Project IoT</div>
+    /* Pastikan main container tidak memotong glow */
+    main {
+      overflow: visible !important;
+    }
+
+    /* Wrapper untuk hero section dengan padding untuk glow */
+    .hero-wrapper {
+      padding: 50px;
+      margin: -50px;
+      position: relative;
+      overflow: visible;
+    }
+
+    /* Outer glow effect on hover for hero section */
+    .hero-section {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Glow effect di luar card - menggunakan pseudo-element pada wrapper */
+    .hero-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 50px;
+      left: 50px;
+      right: 50px;
+      bottom: 50px;
+      border-radius: 1.5rem;
+      background: transparent;
+      opacity: 0;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: -1;
+      pointer-events: none;
+      box-shadow:
+        0 0 50px rgba(6, 182, 212, 0.6),
+        0 0 100px rgba(139, 92, 246, 0.5),
+        0 0 150px rgba(16, 185, 129, 0.4),
+        0 0 200px rgba(6, 182, 212, 0.3);
+    }
+
+    .hero-wrapper:hover .hero-section {
+      transform: translateY(-2px);
+    }
+
+    .hero-wrapper:hover::before {
+      opacity: 1;
+    }
+
+    /* Session Status REC Style untuk Hero Section */
+    #sessionStatusHero {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.3), 0 0 20px rgba(239, 68, 68, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.3);
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-slate-100">
+  <div class="animated-bg"></div>
+  <!-- ================= WELCOME SPLASH ================= -->
+  <div x-data="{ show: true }" x-init="setTimeout(()=>show=false, 2200)" x-show="show"
+    x-transition.opacity.duration.500ms class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b1220]">
+    <div class="relative w-[min(680px,92vw)] rounded-3xl p-8 md:p-10 text-center shadow-2xl overflow-hidden glassy-card"
+      data-aos="zoom-in">
+      <div class="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-cyan-500/20 blur-3xl"></div>
+      <div class="pointer-events-none absolute -bottom-28 -right-16 w-80 h-80 rounded-full bg-emerald-400/20 blur-3xl">
+      </div>
+
+      <!-- Logo placement -->
+      <img data-image-base="logo-sitsense" alt="SitSense Logo" class="mx-auto h-16 md:h-20 w-auto mb-5" />
+
+      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
+        Selamat Datang, <span class="text-cyan-400" data-profile-name>Pengguna</span>
+      </h1>
+      <p class="mt-3 text-slate-300/90">Pemantau postur duduk cerdas. Lebih nyaman, sehat, dan produktif.</p>
+
+      <div class="mt-6 flex items-center justify-center gap-2 text-sm text-slate-300/80">
+        <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+          <i data-lucide="wifi" class="h-4 w-4"></i>
+          Wi‑Fi: menyiapkan…
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+          <i data-lucide="badge-check" class="h-4 w-4"></i>
+          Auth: inisialisasi…
+        </span>
+      </div>
+
+      <div class="mt-7">
+        <button @click="show=false" class="btn btn-gradient-primary normal-case px-6 relative">
+          <span class="relative z-10">Masuk Dashboard</span>
+        </button>
+      </div>
+      <div class="mt-6 text-xs text-slate-400">© <span class="font-medium text-slate-300">SitSense</span> — Project IoT
       </div>
     </div>
+  </div>
 
-    <!-- ================= SIDEBAR ================= -->
-    <!-- Sidebar Manager harus dimuat SEBELUM sidebar HTML -->
-    <script src="./assets/js/sidebar.js"></script>
-    <div id="sidebar-slot"></div>
-    
-    <script>
-      (async () => {
-        const slot = document.getElementById('sidebar-slot');
-        slot.innerHTML = await (await fetch('./components/sidebar.html')).text();
-        // Render icons setelah sidebar dimuat
-        if (window.lucide) {
-          window.lucide.createIcons();
-        }
-        // Initialize images setelah komponen dimuat
-        if (window.ImageLoader && window.ImageLoader.initializeImages) {
-          setTimeout(() => window.ImageLoader.initializeImages(), 100);
-        }
-        // Mark active nav item setelah sidebar dimuat
-        if (window.SidebarManager && window.SidebarManager.markActiveNav) {
-          setTimeout(() => {
-            window.SidebarManager.markActiveNav();
-          }, 200);
-        }
-      })();
-    </script>
+  <!-- ================= SIDEBAR ================= -->
+  <!-- Sidebar Manager harus dimuat SEBELUM sidebar HTML -->
+  <script src="./assets/js/sidebar.js"></script>
+  <div id="sidebar-slot"></div>
 
-    <!-- ================= HEADER ================= -->
-    <header class="profile-top-bar md:ml-64">
-      <div class="profile-top-shell">
-        <div class="profile-brand">
-          <button id="hamburgerMenu" class="md:hidden p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-            <i data-lucide="menu" class="h-5 w-5"></i>
-          </button>
-          <div class="profile-logo-pill">
-            <img data-image-base="logo-sitsense" alt="SitSense" class="h-7 w-auto" />
-            <div>
-              <p class="text-xs text-slate-400 uppercase tracking-[0.3em]">Dashboard</p>
-              <p class="text-lg font-semibold">Monitor Utama</p>
-            </div>
-          </div>
-        </div>
-        <div class="profile-top-meta">
-          <span class="text-xs text-slate-400 inline-flex items-center gap-2 px-3 py-1 border border-white/10 rounded-full">
-            <i data-lucide="activity" class="h-4 w-4 text-cyan-200"></i>
-            Status postur real-time
-          </span>
-          <div class="status-chips">
-            <span id="wifiStatus" class="status-chip">
-              <i data-lucide="wifi" class="h-4 w-4"></i>
-              <span class="hidden sm:inline">Wi‑Fi</span><span>—</span>
-            </span>
-            <span id="authStatus" class="status-chip">
-              <i data-lucide="user-check" class="h-4 w-4"></i>
-              <span class="hidden sm:inline">Auth</span><span>—</span>
-            </span>
-            <span class="status-chip">
-              <i data-lucide="clock" class="h-4 w-4"></i>
-              <time id="clock" class="hidden sm:inline">--:--:--</time>
-              <time id="clockShort" class="sm:hidden">--:--</time>
-            </span>
-          </div>
-        </div>
-        <div class="profile-top-actions">
-          <button type="button" onclick="window.SitSenseUI?.toggleTheme?.()" class="status-chip accent">
-            <i data-lucide="sun-moon" class="h-4 w-4"></i>
-            Mode
-          </button>
-          <div class="profile-mini-card">
-            <div class="profile-mini-card__icon">
-              <i data-lucide="flame" class="h-5 w-5 text-white"></i>
-            </div>
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Streak</p>
-              <p class="profile-mini-card__value text-cyan-200">14</p>
-            </div>
-          </div>
-          <div class="profile-mini-card">
-            <div class="profile-mini-card__icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(59,130,246,0.2));">
-              <i data-lucide="cpu" class="h-5 w-5 text-white"></i>
-            </div>
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">AI Mode</p>
-              <p class="profile-mini-card__value text-emerald-200 text-base">Adaptive</p>
-            </div>
+  <script>
+    (async () => {
+      const slot = document.getElementById('sidebar-slot');
+      slot.innerHTML = await (await fetch('./components/sidebar.html')).text();
+      // Render icons setelah sidebar dimuat
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+      // Initialize images setelah komponen dimuat
+      if (window.ImageLoader && window.ImageLoader.initializeImages) {
+        setTimeout(() => window.ImageLoader.initializeImages(), 100);
+      }
+      // Mark active nav item setelah sidebar dimuat
+      if (window.SidebarManager && window.SidebarManager.markActiveNav) {
+        setTimeout(() => {
+          window.SidebarManager.markActiveNav();
+        }, 200);
+      }
+    })();
+  </script>
+
+  <!-- ================= HEADER ================= -->
+  <header class="profile-top-bar md:ml-64">
+    <div class="profile-top-shell">
+      <div class="profile-brand">
+        <button id="hamburgerMenu"
+          class="md:hidden p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+          <i data-lucide="menu" class="h-5 w-5"></i>
+        </button>
+        <div class="profile-logo-pill">
+          <img data-image-base="logo-sitsense" alt="SitSense" class="h-7 w-auto" />
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-[0.3em]">Dashboard</p>
+            <p class="text-lg font-semibold">Monitor Utama</p>
           </div>
         </div>
       </div>
-    </header>
+      <div class="profile-top-meta">
+        <span
+          class="text-xs text-slate-400 inline-flex items-center gap-2 px-3 py-1 border border-white/10 rounded-full">
+          <i data-lucide="activity" class="h-4 w-4 text-cyan-200"></i>
+          Status postur real-time
+        </span>
+        <div class="status-chips">
+          <span id="wifiStatus" class="status-chip">
+            <i data-lucide="wifi" class="h-4 w-4"></i>
+            <span class="hidden sm:inline">Wi‑Fi</span><span>—</span>
+          </span>
+          <span id="authStatus" class="status-chip">
+            <i data-lucide="user-check" class="h-4 w-4"></i>
+            <span class="hidden sm:inline">Auth</span><span>—</span>
+          </span>
+          <span class="status-chip">
+            <i data-lucide="clock" class="h-4 w-4"></i>
+            <time id="clock" class="hidden sm:inline">--:--:--</time>
+            <time id="clockShort" class="sm:hidden">--:--</time>
+          </span>
+        </div>
+      </div>
+      <div class="profile-top-actions">
+        <!-- Session Status Indicator (REC) -->
+        <div id="sessionStatus"
+          class="hidden items-center gap-2 px-3 py-1.5 rounded-full border border-red-500/50 bg-red-500/10 text-red-300">
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          </span>
+          <span class="text-xs font-semibold">REC</span>
+          <span id="sessionDuration" class="text-xs font-mono">00:00</span>
+          <button id="btnStopSession" class="ml-1 hover:bg-red-500/20 rounded px-2 py-0.5 transition-colors"
+            title="Hentikan Sesi">
+            <i data-lucide="square" class="h-3 w-3"></i>
+          </button>
+        </div>
+        <div class="profile-mini-card">
+          <div class="profile-mini-card__icon">
+            <i data-lucide="flame" class="h-5 w-5 text-white"></i>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Streak</p>
+            <p class="profile-mini-card__value text-cyan-200">14</p>
+          </div>
+        </div>
+        <div class="profile-mini-card">
+          <div class="profile-mini-card__icon"
+            style="background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(59,130,246,0.2));">
+            <i data-lucide="cpu" class="h-5 w-5 text-white"></i>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">AI Mode</p>
+            <p class="profile-mini-card__value text-emerald-200 text-base">Adaptive</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
-    <!-- ================= MAIN ================= -->
-    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6 relative z-10 md:ml-64">
-      <!-- ================= HERO SECTION ================= -->
-      <div class="hero-wrapper relative">
-        <section class="hero-section relative overflow-hidden rounded-2xl glassy-card card-border p-8 md:p-12" data-aos="fade-up">
+  <!-- ================= MAIN ================= -->
+  <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6 relative z-10 md:ml-64">
+    <!-- ================= HERO SECTION ================= -->
+    <div class="hero-wrapper relative">
+      <section class="hero-section relative overflow-hidden rounded-2xl glassy-card card-border p-8 md:p-12"
+        data-aos="fade-up">
         <!-- Background gradient effect -->
-        <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-emerald-500/10 pointer-events-none"></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-emerald-500/10 pointer-events-none">
+        </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none">
+        </div>
+
         <div class="relative z-10">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <!-- Left: Content -->
             <div>
-              <h1 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+              <h1
+                class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
                 Monitor Postur Duduk Anda
               </h1>
               <p class="text-lg text-slate-300/90 mb-6 leading-relaxed">
-                Sistem monitoring postur duduk cerdas yang membantu Anda menjaga kesehatan dan produktivitas. Pantau postur, durasi duduk, dan dapatkan rekomendasi real-time.
+                Sistem monitoring postur duduk cerdas yang membantu Anda menjaga kesehatan dan produktivitas. Pantau
+                postur, durasi duduk, dan dapatkan rekomendasi real-time.
               </p>
-              <div class="flex flex-wrap gap-3">
-                <button class="btn btn-primary normal-case px-6" onclick="document.getElementById('panel-parameters-slot')?.scrollIntoView({ behavior: 'smooth', block: 'start' })">
+              <div class="flex flex-wrap gap-3 items-center">
+                <!-- Status REC untuk Hero Section (akan menggantikan tombol saat sesi aktif) -->
+                <div id="sessionStatusHero"
+                  class="hidden items-center gap-3 px-6 py-3 rounded-full border-2 border-red-500/60 bg-gradient-to-r from-red-500/20 to-red-600/10 backdrop-blur-sm text-red-200 shadow-lg shadow-red-500/20">
+                  <span class="relative flex h-3.5 w-3.5">
+                    <span
+                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
+                  </span>
+                  <span class="text-base font-bold">REC</span>
+                  <span id="sessionDurationHero" class="text-base font-mono font-semibold">00:00</span>
+                  <button id="btnStopSessionHero"
+                    class="ml-1 hover:bg-red-500/30 rounded-lg px-3 py-1.5 transition-all hover:scale-105"
+                    title="Hentikan Sesi">
+                    <i data-lucide="square" class="h-4 w-4"></i>
+                  </button>
+                </div>
+                <button class="btn btn-primary normal-case px-6" id="btnStartMonitoringHero"
+                  onclick="window.handleStartMonitoringClick && window.handleStartMonitoringClick()">
                   <i data-lucide="play" class="h-4 w-4"></i>
                   Mulai Monitoring
                 </button>
-                <button class="btn btn-outline normal-case px-6" onclick="if(window.location.pathname.includes('history')) { document.querySelector('[data-nav=history]')?.click(); } else { window.location.href='./history.html'; }">
+                <button class="btn btn-outline normal-case px-6"
+                  onclick="if(window.location.pathname.includes('history')) { document.querySelector('[data-nav=history]')?.click(); } else { window.location.href='./history.html'; }">
                   <i data-lucide="bar-chart-2" class="h-4 w-4"></i>
                   Lihat Statistik
                 </button>
               </div>
             </div>
-            
+
             <!-- Right: Quick Stats -->
             <div class="grid grid-cols-2 gap-4">
               <div class="glassy-card card-border p-4 text-center">
@@ -457,372 +534,589 @@
           </div>
         </div>
       </section>
+    </div>
+
+    <!-- Quick status cards -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="card glassy-card card-border" data-aos="fade-up">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title text-base">Durasi Duduk</h3>
+            <i data-lucide="timer" class="h-5 w-5 text-cyan-300"></i>
+          </div>
+          <div class="mt-2 text-3xl font-bold"><span id="sitDuration">00:00:00</span></div>
+          <p class="text-xs text-slate-300/80">Ambang lembut: <span id="softThresholdLabel">30m</span> • ambang kuat:
+            <span id="hardThresholdLabel">60m</span>
+          </p>
+        </div>
       </div>
-
-      <!-- Quick status cards -->
-      <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card glassy-card card-border" data-aos="fade-up">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title text-base">Durasi Duduk</h3>
-              <i data-lucide="timer" class="h-5 w-5 text-cyan-300"></i>
-            </div>
-            <div class="mt-2 text-3xl font-bold"><span id="sitDuration">00:00:00</span></div>
-            <p class="text-xs text-slate-300/80">Ambang lembut: <span id="softThresholdLabel">30m</span> • ambang kuat: <span id="hardThresholdLabel">60m</span></p>
-          </div>
-        </div>
-        <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="50">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title text-base">Skor Postur</h3>
-              <i data-lucide="activity" class="h-5 w-5 text-emerald-300"></i>
-            </div>
-            <div class="mt-2 flex items-end gap-2">
-              <div class="text-3xl font-bold" id="postureScore">—</div>
-              <div class="text-sm text-slate-300/80" id="postureLabel">menunggu data…</div>
-            </div>
-            <div class="mt-3">
-              <progress class="progress progress-info w-full" value="0" max="100" id="postureScoreBar"></progress>
-            </div>
-          </div>
-        </div>
-        <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="100">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title text-base">Status Perangkat</h3>
-              <i data-lucide="cpu" class="h-5 w-5 text-violet-300"></i>
-            </div>
-            <ul class="mt-2 text-sm space-y-1">
-              <li>ESP32: <span id="deviceStatus" class="text-slate-200">—</span></li>
-              <li>IP: <span id="deviceIP" class="text-slate-200">—</span></li>
-              <li>Firmware: <span id="deviceFW" class="text-slate-200">—</span></li>
-            </ul>
-          </div>
-        </div>
-        <div class="card glassy-card card-border md:col-span-3 lg:col-span-1" data-aos="fade-up" data-aos-delay="150">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title text-base">Jarak Ultrasonik</h3>
-              <i data-lucide="ruler" class="h-5 w-5 text-cyan-300"></i>
-            </div>
-            <div class="mt-3 grid grid-cols-2 gap-4">
-              <div class="text-center">
-                <div class="text-xs text-slate-400">Punggung</div>
-                <div class="mt-1 text-3xl font-bold">
-                  <span id="ultraBackVal">—</span>
-                  <span class="text-base font-semibold text-slate-400">cm</span>
-                </div>
-                <div class="mt-1 text-xs">
-                  <span id="ultraBackStatus" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300">
-                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
-                    — 
-                  </span>
-                </div>
-              </div>
-              <div class="text-center">
-                <div class="text-xs text-slate-400">Leher</div>
-                <div class="mt-1 text-3xl font-bold">
-                  <span id="ultraNeckVal">—</span>
-                  <span class="text-base font-semibold text-slate-400">cm</span>
-                </div>
-                <div class="mt-1 text-xs">
-                  <span id="ultraNeckStatus" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300">
-                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
-                    — 
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="mt-3 text-[11px] text-slate-400">
-              Indikasi: <span class="text-emerald-400 font-medium">Hijau = Aman</span>, <span class="text-amber-300 font-medium">Kuning = Waspada</span>, <span class="text-rose-400 font-medium">Merah = Berbahaya</span>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-
-        <div id="panel-parameters-slot"></div>
-        <script>
-        (async () => {
-            const slot = document.getElementById('panel-parameters-slot');
-            const res = await fetch('/components/panel-parameters.html');
-            slot.innerHTML = await res.text();
-            if (window.lucide) lucide.createIcons(); // render ikon setelah inject
-            
-            // Initialize images setelah komponen dimuat
-            if (window.ImageLoader && window.ImageLoader.initializeImages) {
-              setTimeout(() => window.ImageLoader.initializeImages(), 100);
-            }
-            
-            // Trigger update balance setelah panel-parameters dimuat
-            // Dispatch custom event untuk memberitahu app.js bahwa elemen baru sudah tersedia
-            window.dispatchEvent(new CustomEvent('panel-parameters-loaded'));
-        })();
-        </script>
-        
-
-
-        <!-- AI Advice panel -->
-        <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="60">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title">Rekomendasi AI</h3>
-              <div class="tooltip" data-tip="Didukung Gemini + Google Voice">
-                <i data-lucide="sparkles" class="h-5 w-5 text-yellow-300"></i>
-              </div>
-            </div>
-            <div id="adviceText" class="mt-2 text-slate-300/90 text-sm leading-relaxed">
-              Menunggu data… rekomendasi personal akan muncul di sini.
-            </div>
-            <div class="mt-4 flex gap-2">
-              <button id="btnRefreshAdvice" class="btn btn-outline btn-sm">Minta Rekomendasi</button>
-              <button id="btnListenAdvice" class="btn btn-primary btn-sm">Dengarkan</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Charts -->
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="card glassy-card card-border" data-aos="fade-up">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title">Tekanan vs Waktu</h3>
-              <i data-lucide="line-chart" class="h-5 w-5 text-cyan-300"></i>
-            </div>
-            <div class="mt-4">
-              <canvas id="chartPressure" height="140"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="50">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <h3 class="card-title">Kualitas Postur (Baik vs Koreksi)</h3>
-              <i data-lucide="pie-chart" class="h-5 w-5 text-emerald-300"></i>
-            </div>
-            <div class="mt-4">
-              <canvas id="chartQuality" height="140"></canvas>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Monitoring Tubuh (React Embed) -->
-      <section class="card glassy-card card-border" data-aos="fade-up">
+      <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="50">
         <div class="card-body">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="card-title">Monitoring Tubuh (Eksperimen)</h3>
-            <i data-lucide="radar" class="h-5 w-5 text-cyan-300"></i>
+          <div class="flex items-center justify-between">
+            <h3 class="card-title text-base">Skor Postur</h3>
+            <i data-lucide="activity" class="h-5 w-5 text-emerald-300"></i>
           </div>
-          <div class="rounded-xl overflow-hidden border border-white/10">
-            <iframe src="./components/monitoring-tubuh.html" title="Monitoring Tubuh" style="width: 100%; height: 860px; border: 0; background: transparent;"></iframe>
+          <div class="mt-2 flex items-end gap-2">
+            <div class="text-3xl font-bold" id="postureScore">—</div>
+            <div class="text-sm text-slate-300/80" id="postureLabel">menunggu data…</div>
           </div>
-        </div>
-      </section>
-      <script>
-        // Sinkronkan nilai dari iframe Monitoring Tubuh ke section "Jarak Ultrasonik"
-        (function() {
-          const elBackVal = document.getElementById('ultraBackVal');
-          const elBackStatus = document.getElementById('ultraBackStatus');
-          const elNeckVal = document.getElementById('ultraNeckVal');
-          const elNeckStatus = document.getElementById('ultraNeckStatus');
-          if (!elBackVal || !elBackStatus || !elNeckVal || !elNeckStatus) return;
-          const updateBadge = (container, status) => {
-            const dot = container.querySelector('span.h-2.w-2');
-            const textNode = container.childNodes[container.childNodes.length - 1];
-            // Reset dot color
-            if (dot) {
-              dot.classList.remove('bg-slate-400','bg-emerald-400','bg-amber-300','bg-rose-400');
-              const map = { green: 'bg-emerald-400', yellow: 'bg-amber-300', red: 'bg-rose-400' };
-              dot.classList.add(map[status.color] || 'bg-slate-400');
-            }
-            if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-              textNode.textContent = ' ' + (status.text || '—');
-            } else {
-              container.appendChild(document.createTextNode(' ' + (status.text || '—')));
-            }
-          };
-          window.addEventListener('message', function(ev) {
-            const msg = ev?.data;
-            if (!msg || msg.type !== 'SITSENSE_ULTRA_UPDATE' || !msg.data) return;
-            const d = msg.data;
-            if (typeof d.backDistance === 'number') {
-              elBackVal.textContent = d.backDistance.toFixed(1);
-              updateBadge(elBackStatus, d.backStatus || { text: '—', color: 'green' });
-            }
-            if (typeof d.neckDistance === 'number') {
-              elNeckVal.textContent = d.neckDistance.toFixed(1);
-              updateBadge(elNeckStatus, d.neckStatus || { text: '—', color: 'green' });
-            }
-          }, false);
-        })();
-      </script>
-
-      <!-- Score Breakdown -->
-      <section class="card glassy-card card-border" data-aos="fade-up">
-        <div class="card-body">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="card-title">Rincian Skor Postur</h3>
-            <i data-lucide="clipboard-list" class="h-5 w-5 text-violet-300"></i>
-          </div>
-          <div class="space-y-4">
-            <!-- Back Score -->
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-semibold text-sm">Posisi Punggung</span>
-                <span class="font-bold text-lg text-cyan-300" id="backScore">0</span>
-              </div>
-              <progress class="progress progress-info w-full" value="0" max="100" id="backScoreBar"></progress>
-            </div>
-            <!-- Neck Score -->
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-semibold text-sm">Posisi Leher</span>
-                <span class="font-bold text-lg text-emerald-300" id="neckScore">0</span>
-              </div>
-              <progress class="progress progress-success w-full" value="0" max="100" id="neckScoreBar"></progress>
-            </div>
-            <!-- Pressure Score -->
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-semibold text-sm">Tekanan Duduk</span>
-                <span class="font-bold text-lg text-amber-300" id="pressureScore">0</span>
-              </div>
-              <progress class="progress progress-warning w-full" value="0" max="100" id="pressureScoreBar"></progress>
-            </div>
+          <div class="mt-3">
+            <progress class="progress progress-info w-full" value="0" max="100" id="postureScoreBar"></progress>
           </div>
         </div>
-      </section>
-
-      <!-- Today's Statistics -->
-      <section class="card glassy-card card-border" data-aos="fade-up">
-        <div class="card-body">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="card-title">Statistik Hari Ini</h3>
-            <i data-lucide="calendar-check" class="h-5 w-5 text-cyan-300"></i>
-          </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div class="text-3xl font-bold" id="avgScore">—</div>
-              <div class="text-xs text-slate-400">Skor Rata-rata</div>
-            </div>
-            <div>
-              <div class="text-3xl font-bold" id="totalTime">—</div>
-              <div class="text-xs text-slate-400">Total Waktu</div>
-            </div>
-            <div>
-              <div class="text-3xl font-bold text-emerald-400" id="goodPostureCount">—</div>
-              <div class="text-xs text-slate-400">Postur Baik</div>
-            </div>
-            <div>
-              <div class="text-3xl font-bold text-red-400" id="badPostureCount">—</div>
-              <div class="text-xs text-slate-400">Postur Buruk</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Smart Recommendations & Session History -->
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="card glassy-card card-border" data-aos="fade-up">
-          <div class="card-body">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="card-title">Rekomendasi Cerdas</h3>
-              <i data-lucide="lightbulb" class="h-5 w-5 text-yellow-300"></i>
-            </div>
-            <div id="recommendations" class="space-y-2">
-              <p class="text-sm text-slate-400">Menunggu data untuk memberikan rekomendasi...</p>
-            </div>
-          </div>
-        </div>
-        <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="50">
-          <div class="card-body">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="card-title">Riwayat Sesi</h3>
-              <i data-lucide="history" class="h-5 w-5 text-violet-300"></i>
-            </div>
-            <div id="historyList" class="space-y-2 max-h-60 overflow-y-auto">
-               <p class="text-sm text-slate-400">Belum ada riwayat sesi.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div id="footer-slot"></div>
-<script>
-  (async () => {
-    const slot = document.getElementById('footer-slot');
-    const html = await (await fetch('/components/footer.html')).text();
-    slot.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
-    const y = document.getElementById('footerYear'); if (y) y.textContent = new Date().getFullYear();
-    // Initialize images setelah komponen dimuat
-    if (window.ImageLoader && window.ImageLoader.initializeImages) {
-      setTimeout(() => window.ImageLoader.initializeImages(), 100);
-    }
-  })();
-</script>
-
-<div id="modal-slot"></div>
-<script>
-  (async ()=> {
-    document.getElementById('modal-slot').innerHTML =
-      await (await fetch('/components/modal-detail.html')).text();
-    if (window.lucide) window.lucide.createIcons();
-    // Initialize images setelah komponen dimuat
-    if (window.ImageLoader && window.ImageLoader.initializeImages) {
-      setTimeout(() => window.ImageLoader.initializeImages(), 100);
-    }
-  })();
-</script>
-
-
-    </main>
-
-    <!-- ================= FOOTER ================= -->
-    <footer class="border-t border-white/10 py-6">
-      <div class="max-w-7xl mx-auto px-4 md:px-6 text-sm text-slate-400 flex items-center justify-between">
-        <p>© <span class="text-slate-200 font-medium">SitSense</span> — Project IoT</p>
-        <p>Versi UI: <span id="uiVersion">1.0.0</span></p>
       </div>
-    </footer>
+      <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title text-base">Status Perangkat</h3>
+            <i data-lucide="cpu" class="h-5 w-5 text-violet-300"></i>
+          </div>
+          <ul class="mt-2 text-sm space-y-1">
+            <li>ESP32: <span id="deviceStatus" class="text-slate-200">—</span></li>
+            <li>IP: <span id="deviceIP" class="text-slate-200">—</span></li>
+            <li>Firmware: <span id="deviceFW" class="text-slate-200">—</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="card glassy-card card-border md:col-span-3 lg:col-span-1" data-aos="fade-up" data-aos-delay="150">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title text-base">Jarak Ultrasonik</h3>
+            <i data-lucide="ruler" class="h-5 w-5 text-cyan-300"></i>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-4">
+            <div class="text-center">
+              <div class="text-xs text-slate-400">Punggung</div>
+              <div class="mt-1 text-3xl font-bold">
+                <span id="ultraBackVal">—</span>
+                <span class="text-base font-semibold text-slate-400">cm</span>
+              </div>
+              <div class="mt-1 text-xs">
+                <span id="ultraBackStatus"
+                  class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300">
+                  <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                  —
+                </span>
+              </div>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-slate-400">Leher</div>
+              <div class="mt-1 text-3xl font-bold">
+                <span id="ultraNeckVal">—</span>
+                <span class="text-base font-semibold text-slate-400">cm</span>
+              </div>
+              <div class="mt-1 text-xs">
+                <span id="ultraNeckStatus"
+                  class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-white/10 bg-white/5 text-slate-300">
+                  <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                  —
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 text-[11px] text-slate-400">
+            Indikasi: <span class="text-emerald-400 font-medium">Hijau = Aman</span>, <span
+              class="text-amber-300 font-medium">Kuning = Waspada</span>, <span class="text-rose-400 font-medium">Merah
+              = Berbahaya</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <!-- ================= AUDIO (alerts & assistant) ================= -->
-    <audio id="alertSoft" src="./assets/audio/alertSoft.wav" preload="auto"></audio>
-    <audio id="alertHard" src="./assets/audio/alertHard.wav" preload="auto"></audio>
-    <audio id="assistantChime" src="./assets/audio/assistantChime.wav" preload="auto"></audio>
 
-    <!-- ================= SCRIPTS (light inline boot only) ================= -->
+    <div id="panel-parameters-slot"></div>
     <script>
-      // Init AOS & Lucide after page ready
-      document.addEventListener('DOMContentLoaded', () => {
-        if (window.AOS) AOS.init();
-        if (window.lucide) window.lucide.createIcons();
-      });
+      (async () => {
+        const slot = document.getElementById('panel-parameters-slot');
+        const res = await fetch('/components/panel-parameters.html');
+        slot.innerHTML = await res.text();
+        if (window.lucide) lucide.createIcons(); // render ikon setelah inject
 
-      // Simple live clock
-      (function clock(){
-        const el = document.getElementById('clock');
-        if (!el) return; 
-        const pad = n => String(n).padStart(2,'0');
-        setInterval(()=>{
-          const d = new Date();
-          el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        }, 1000);
+        // Initialize images setelah komponen dimuat
+        if (window.ImageLoader && window.ImageLoader.initializeImages) {
+          setTimeout(() => window.ImageLoader.initializeImages(), 100);
+        }
+
+        // Trigger update balance setelah panel-parameters dimuat
+        // Dispatch custom event untuk memberitahu app.js bahwa elemen baru sudah tersedia
+        window.dispatchEvent(new CustomEvent('panel-parameters-loaded'));
       })();
     </script>
 
-    <!-- ================= PLACEHOLDER for future modules ================= -->
-    <!-- Uncomment these once files exist to avoid 404s during early setup -->
-    <script src="./assets/js/ui.js"></script>
+
+
+    <!-- AI Advice panel -->
+    <!-- AI Advice panel (Enhanced) -->
+    <div class="card glassy-card card-border relative overflow-hidden group" data-aos="fade-up" data-aos-delay="60">
+      <!-- Decorative background elements -->
+      <div
+        class="absolute -right-10 -top-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-colors duration-500">
+      </div>
+
+      <div class="card-body relative z-10">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10">
+              <i data-lucide="bot" class="h-6 w-6 text-purple-300"></i>
+            </div>
+            <div>
+              <h3 class="card-title text-lg leading-none">SitSense Coach</h3>
+              <p class="text-xs text-slate-400 mt-1">Powered by Gemini AI</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <div id="aiLoadingIndicator"
+              class="hidden items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+              <span class="loading loading-dots loading-xs text-purple-300"></span>
+              <span class="text-xs text-purple-200">Menganalisis...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-xl border border-white/5 relative flex flex-col h-[300px]">
+          <!-- Chat History -->
+          <div id="chatHistory"
+            class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <!-- Initial Welcome Message -->
+            <div class="chat chat-start">
+              <div class="chat-image avatar">
+                <div class="w-8 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-1">
+                  <i data-lucide="bot" class="h-full w-full text-purple-300"></i>
+                </div>
+              </div>
+              <div class="chat-bubble chat-bubble-primary bg-white/5 text-slate-300 text-sm">
+                Halo! Klik "Analisis Sekarang" untuk mendapatkan rekomendasi postur, atau tanyakan sesuatu tentang
+                ergonomi.
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing Indicator (Hidden by default) -->
+          <div id="aiTypingIndicator" class="hidden px-4 py-2 text-xs text-slate-500">
+            <span class="loading loading-dots loading-xs"></span> Sedang mengetik...
+          </div>
+
+          <!-- Input Area -->
+          <div class="p-3 border-t border-white/5 bg-white/5 rounded-b-xl">
+            <form id="chatForm" class="flex gap-2">
+              <input type="text" id="chatInput"
+                class="input input-sm bg-slate-900/50 border-white/10 text-slate-200 w-full focus:outline-none focus:border-purple-500/50 placeholder:text-slate-600"
+                placeholder="Tanya tentang postur..." autocomplete="off">
+              <button type="submit" class="btn btn-sm btn-square btn-ghost hover:bg-white/10 text-purple-400">
+                <i data-lucide="send" class="h-4 w-4"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between gap-3">
+          <button id="btnListenAdvice"
+            class="btn btn-ghost btn-sm btn-circle text-slate-400 hover:text-white hover:bg-white/10" title="Bacakan">
+            <i data-lucide="volume-2" class="h-5 w-5"></i>
+          </button>
+          <button id="btnRefreshAdvice"
+            class="btn btn-sm border-0 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-900/20 flex-1 gap-2 group-hover:shadow-purple-500/20 transition-all">
+            <i data-lucide="sparkles" class="h-4 w-4"></i>
+            Analisis Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card glassy-card card-border" data-aos="fade-up">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Tekanan vs Waktu</h3>
+            <i data-lucide="line-chart" class="h-5 w-5 text-cyan-300"></i>
+          </div>
+          <div class="mt-4">
+            <canvas id="chartPressure" height="140"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Kualitas Postur (Baik vs Koreksi)</h3>
+            <i data-lucide="pie-chart" class="h-5 w-5 text-emerald-300"></i>
+          </div>
+          <div class="mt-4">
+            <canvas id="chartQuality" height="140"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Monitoring Tubuh (React Embed) -->
+    <section class="card glassy-card card-border" data-aos="fade-up">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="card-title">Monitoring Tubuh (Eksperimen)</h3>
+          <i data-lucide="radar" class="h-5 w-5 text-cyan-300"></i>
+        </div>
+        <div class="rounded-xl overflow-hidden border border-white/10">
+          <iframe src="./components/monitoring-tubuh.html" title="Monitoring Tubuh"
+            style="width: 100%; height: 860px; border: 0; background: transparent;"></iframe>
+        </div>
+      </div>
+    </section>
+    <script>
+      // Sinkronkan nilai dari iframe Monitoring Tubuh ke section "Jarak Ultrasonik"
+      (function () {
+        const elBackVal = document.getElementById('ultraBackVal');
+        const elBackStatus = document.getElementById('ultraBackStatus');
+        const elNeckVal = document.getElementById('ultraNeckVal');
+        const elNeckStatus = document.getElementById('ultraNeckStatus');
+        if (!elBackVal || !elBackStatus || !elNeckVal || !elNeckStatus) return;
+        const updateBadge = (container, status) => {
+          const dot = container.querySelector('span.h-2.w-2');
+          const textNode = container.childNodes[container.childNodes.length - 1];
+          // Reset dot color
+          if (dot) {
+            dot.classList.remove('bg-slate-400', 'bg-emerald-400', 'bg-amber-300', 'bg-rose-400');
+            const map = { green: 'bg-emerald-400', yellow: 'bg-amber-300', red: 'bg-rose-400' };
+            dot.classList.add(map[status.color] || 'bg-slate-400');
+          }
+          if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+            textNode.textContent = ' ' + (status.text || '—');
+          } else {
+            container.appendChild(document.createTextNode(' ' + (status.text || '—')));
+          }
+        };
+        window.addEventListener('message', function (ev) {
+          const msg = ev?.data;
+          if (!msg || msg.type !== 'SITSENSE_ULTRA_UPDATE' || !msg.data) return;
+          const d = msg.data;
+          if (typeof d.backDistance === 'number') {
+            elBackVal.textContent = d.backDistance > 0 ? d.backDistance.toFixed(1) : '∞';
+            updateBadge(elBackStatus, d.backStatus || { text: '—', color: 'green' });
+          }
+          if (typeof d.neckDistance === 'number') {
+            elNeckVal.textContent = d.neckDistance > 0 ? d.neckDistance.toFixed(1) : '∞';
+            updateBadge(elNeckStatus, d.neckStatus || { text: '—', color: 'green' });
+          }
+        }, false);
+      })();
+    </script>
+
+    <!-- Score Breakdown -->
+    <section class="card glassy-card card-border" data-aos="fade-up">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="card-title">Rincian Skor Postur</h3>
+          <i data-lucide="clipboard-list" class="h-5 w-5 text-violet-300"></i>
+        </div>
+        <div class="space-y-4">
+          <!-- Back Score -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-semibold text-sm">Posisi Punggung</span>
+              <span class="font-bold text-lg text-cyan-300" id="backScore">0</span>
+            </div>
+            <progress class="progress progress-info w-full" value="0" max="100" id="backScoreBar"></progress>
+          </div>
+          <!-- Neck Score -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-semibold text-sm">Posisi Leher</span>
+              <span class="font-bold text-lg text-emerald-300" id="neckScore">0</span>
+            </div>
+            <progress class="progress progress-success w-full" value="0" max="100" id="neckScoreBar"></progress>
+          </div>
+          <!-- Pressure Score -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-semibold text-sm">Tekanan Duduk</span>
+              <span class="font-bold text-lg text-amber-300" id="pressureScore">0</span>
+            </div>
+            <progress class="progress progress-warning w-full" value="0" max="100" id="pressureScoreBar"></progress>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Today's Statistics -->
+    <section class="card glassy-card card-border" data-aos="fade-up">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="card-title">Statistik Hari Ini</h3>
+          <i data-lucide="calendar-check" class="h-5 w-5 text-cyan-300"></i>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div class="text-3xl font-bold" id="avgScore">—</div>
+            <div class="text-xs text-slate-400">Skor Rata-rata</div>
+          </div>
+          <div>
+            <div class="text-3xl font-bold" id="totalTime">—</div>
+            <div class="text-xs text-slate-400">Total Waktu</div>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-emerald-400" id="goodPostureCount">—</div>
+            <div class="text-xs text-slate-400">Postur Baik</div>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-red-400" id="badPostureCount">—</div>
+            <div class="text-xs text-slate-400">Postur Buruk</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Smart Recommendations & Session History -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card glassy-card card-border" data-aos="fade-up">
+        <div class="card-body">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="card-title">Rekomendasi Cerdas</h3>
+            <i data-lucide="lightbulb" class="h-5 w-5 text-yellow-300"></i>
+          </div>
+          <div id="recommendations" class="space-y-2">
+            <p class="text-sm text-slate-400">Menunggu data untuk memberikan rekomendasi...</p>
+          </div>
+        </div>
+      </div>
+      <div class="card glassy-card card-border" data-aos="fade-up" data-aos-delay="50">
+        <div class="card-body">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="card-title">Riwayat Sesi</h3>
+            <i data-lucide="history" class="h-5 w-5 text-violet-300"></i>
+          </div>
+          <div id="historyList" class="space-y-2 max-h-60 overflow-y-auto">
+            <p class="text-sm text-slate-400">Belum ada riwayat sesi.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="footer-slot"></div>
+    <script>
+      (async () => {
+        const slot = document.getElementById('footer-slot');
+        const html = await (await fetch('/components/footer.html')).text();
+        slot.innerHTML = html;
+        if (window.lucide) window.lucide.createIcons();
+        const y = document.getElementById('footerYear'); if (y) y.textContent = new Date().getFullYear();
+        // Initialize images setelah komponen dimuat
+        if (window.ImageLoader && window.ImageLoader.initializeImages) {
+          setTimeout(() => window.ImageLoader.initializeImages(), 100);
+        }
+      })();
+    </script>
+
+    <div id="modal-slot"></div>
+    <script>
+      (async () => {
+        document.getElementById('modal-slot').innerHTML =
+          await (await fetch('/components/modal-detail.html')).text();
+        if (window.lucide) window.lucide.createIcons();
+        // Initialize images setelah komponen dimuat
+        if (window.ImageLoader && window.ImageLoader.initializeImages) {
+          setTimeout(() => window.ImageLoader.initializeImages(), 100);
+        }
+      })();
+    </script>
+
+    <div id="session-modal-slot"></div>
+    <script>
+      (async () => {
+        const slot = document.getElementById('session-modal-slot');
+        slot.innerHTML = await (await fetch('/components/modal-session-confirm.html')).text();
+        if (window.lucide) window.lucide.createIcons();
+      })();
+    </script>
+
+    <div id="alert-popup-slot"></div>
+    <script>
+      (async () => {
+        const slot = document.getElementById('alert-popup-slot');
+        slot.innerHTML = await (await fetch('/components/alert-popup.html')).text();
+        if (window.lucide) window.lucide.createIcons();
+        // Dispatch event setelah komponen dimuat
+        window.dispatchEvent(new CustomEvent('sitsense:alertPopup:loaded'));
+      })();
+    </script>
+
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-white/10 py-6">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 text-sm text-slate-400 flex items-center justify-between">
+      <p>© <span class="text-slate-200 font-medium">SitSense</span> — Project IoT</p>
+      <p>Versi UI: <span id="uiVersion">1.0.0</span></p>
+    </div>
+  </footer>
+
+  <!-- ================= AUDIO (alerts & assistant) ================= -->
+  <audio id="alertSoft" src="./assets/audio/alertSoft.wav" preload="auto"></audio>
+  <audio id="alertHard" src="./assets/audio/alertHard.wav" preload="auto"></audio>
+  <audio id="assistantChime" src="./assets/audio/assistantChime.wav" preload="auto"></audio>
+
+  <!-- ================= SCRIPTS (light inline boot only) ================= -->
+  <script>
+    // Init AOS & Lucide after page ready
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.AOS) AOS.init();
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    // Simple live clock
+    (function clock() {
+      const el = document.getElementById('clock');
+      if (!el) return;
+      const pad = n => String(n).padStart(2, '0');
+      setInterval(() => {
+        const d = new Date();
+        el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      }, 1000);
+    })();
+  </script>
+
+  <!-- ================= ADMIN FLOATING TOOLS (Time Scale + Mock Posture) ================= -->
+  <div id="adminFloatingTools" class="fixed z-40 bottom-6 right-6 md:bottom-8 md:right-8 hidden"
+    style="pointer-events: none;">
+    <div id="adminToolsPanel"
+      class="glassy-card card-border rounded-2xl shadow-xl border border-cyan-400/40 bg-slate-900/90 backdrop-blur-md w-[260px] md:w-[280px] transition-all duration-300"
+      style="pointer-events: auto; cursor: move;">
+      <!-- Header (draggable & collapsible) -->
+      <div id="adminToolsHeader" class="p-3 md:p-4 pb-2 flex items-center justify-between gap-2 cursor-move select-none"
+        style="user-select: none;">
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-cyan-200 uppercase tracking-[0.16em]">
+            Admin Tools
+          </p>
+          <p class="text-[11px] text-slate-400 admin-tools-subtitle">
+            Hanya untuk demo & testing.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/40">
+            <i data-lucide="zap" class="h-3 w-3 text-cyan-300"></i>
+            <span id="floatTimeScaleLabel" class="text-[11px] text-cyan-100">1.0x</span>
+          </span>
+          <button id="adminToolsCollapseBtn" type="button" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+            title="Collapse/Expand">
+            <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 admin-tools-collapse-icon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content (collapsible) -->
+      <div id="adminToolsContent" class="px-3 md:px-4 pb-3 md:pb-4 space-y-2 admin-tools-content">
+
+        <!-- Time Scale -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Percepatan waktu</span>
+            <span class="text-slate-500">Timer duduk & eskalasi</span>
+          </div>
+          <input id="floatTimeScaleInput" type="range" class="range range-xs" min="1" max="30" step="1" value="1" />
+          <div class="flex justify-between text-[10px] text-slate-500">
+            <span>1x</span>
+            <span>10x</span>
+            <span>30x</span>
+          </div>
+        </div>
+
+        <!-- Active Stream Mode Selector -->
+        <div class="space-y-1 pt-1 border-t border-white/5">
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Stream aktif</span>
+            <span class="text-slate-500">Pilih mode postur</span>
+          </div>
+          <select id="activeStreamMode"
+            class="select select-xs md:select-sm w-full bg-slate-800/50 border-white/10 text-[11px] md:text-xs">
+            <option value="none">Tidak ada stream</option>
+            <option value="good">Postur baik</option>
+            <option value="bad">Postur buruk</option>
+          </select>
+          <button id="btnToggleActiveStream" type="button"
+            class="btn btn-xs md:btn-sm w-full btn-gradient-outline relative">
+            <span class="relative z-10 flex items-center justify-center gap-2 text-[11px] md:text-xs">
+              <i data-lucide="play" class="h-3 w-3" id="activeStreamIcon"></i>
+              <span id="activeStreamLabel">Aktifkan stream</span>
+            </span>
+          </button>
+          <p class="text-[10px] text-slate-500 leading-snug">
+            Menampilkan stream aktif sesuai mode yang dipilih. Mode postur baik menggunakan nilai ideal, mode postur
+            buruk menggunakan nilai yang perlu perbaikan.
+          </p>
+        </div>
+
+        <!-- Exit Admin Mode -->
+        <div class="space-y-1 pt-1 border-t border-white/10">
+          <button id="btnExitAdminMode" type="button" class="btn btn-xs md:btn-sm w-full btn-error relative">
+            <span class="relative z-10 flex items-center justify-center gap-2 text-[11px] md:text-xs">
+              <i data-lucide="log-out" class="h-3 w-3"></i>
+              Keluar dari Mode Admin
+            </span>
+          </button>
+          <p class="text-[10px] text-slate-500 leading-snug">
+            Menonaktifkan mode admin dan menyembunyikan panel admin tools.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Admin Tools Collapsed State */
+    #adminToolsPanel.admin-tools-collapsed {
+      padding: 0;
+    }
+
+    #adminToolsPanel.admin-tools-collapsed .admin-tools-content {
+      display: none !important;
+    }
+
+    #adminToolsPanel.admin-tools-collapsed .admin-tools-subtitle {
+      display: none;
+    }
+
+    #adminToolsPanel.admin-tools-collapsed .admin-tools-collapse-icon {
+      transform: rotate(-90deg);
+      transition: transform 0.2s ease;
+    }
+
+    .admin-tools-collapse-icon {
+      transition: transform 0.2s ease;
+    }
+
+    #adminToolsPanel.admin-tools-collapsed #adminToolsHeader {
+      padding-bottom: 0.75rem;
+    }
+
+    /* Drag cursor */
+    #adminToolsHeader {
+      cursor: move;
+    }
+
+    #adminToolsHeader:active {
+      cursor: grabbing;
+    }
+  </style>
+
+  <!-- ================= PLACEHOLDER for future modules ================= -->
+  <!-- Uncomment these once files exist to avoid 404s during early setup -->
+  <script src="./assets/js/ui.js"></script>
+  <script src="./assets/js/user-context.js"></script>
   <script src="./assets/js/auth.js"></script>
   <script src="./assets/js/charts.js"></script>
   <script src="./assets/js/posture-visual.js"></script>
   <script src="./assets/js/alerts.js"></script>
+  <script src="./assets/js/alert-popup.js"></script>
   <script src="./assets/js/ai-gemini.js"></script>
   <script src="./assets/js/tts-google.js"></script>
+  <script src="./assets/js/audio-coach.js"></script>
+  <script src="./assets/js/history-service.js"></script>
+  <script src="./assets/js/session-manager.js"></script>
+  <script src="./assets/js/session-debug.js"></script>
   <script src="./assets/js/app.js"></script>
+  <script src="./assets/js/mock-posture.js"></script>
   <script src="./assets/js/modal-detail.js"></script>
   <script src="./assets/js/welcome.js"></script>
   <script>
@@ -840,26 +1134,746 @@
     })();
   </script>
 
+  <!-- Session Manager Initialization -->
+  <script>
+    // Helper function untuk menangani klik tombol "Mulai Monitoring" - tersedia secara global
+    window.handleStartMonitoringClick = function () {
+      if (window.SessionManager) {
+        if (window.SessionManager.isActive()) {
+          // Sesi sudah aktif
+          if (window.SitSenseUI && window.SitSenseUI.showToast) {
+            window.SitSenseUI.showToast('Sesi monitoring sudah aktif', 'info');
+          }
+        } else {
+          // Minta konfirmasi untuk memulai sesi
+          window.SessionManager.requestStart();
+        }
+      } else {
+        // Fallback: scroll ke panel parameters jika Session Manager belum tersedia
+        const panelSlot = document.getElementById('panel-parameters-slot');
+        if (panelSlot) {
+          panelSlot.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    };
 
-<script>
-  // Opsi 1 (proxy): window.__GEMINI_PROXY_URL = 'https://your-proxy.example.com/gemini';
-  // Opsi 2 (direct): SitSenseAI.setConfig({ apiKey: 'YOUR_GEMINI_API_KEY' });
+    (function () {
+      let sessionRequested = false;
 
-  // Minta saran:
-  (async () => {
-    const advice = await getPostureAdvice({
-      score: window.__postureScore || 62,
-      imbalance: window.__imbalance || { lr: 0.15, fb: 0.08 },
-      durationSec: (window.SitSenseAlerts?.getElapsedSeconds?.() || 0),
-      lastAlerts: 'soft'
-    });
-    // tampilkan di UI
-    if (window.showAdviceText) showAdviceText(advice.text);
-  })();
-</script>
+      // Wait for device ID and then request session
+      function waitForDeviceAndRequestSession() {
+        if (sessionRequested) return;
 
-    <!-- <script src="./assets/js/tts-google.js"></script> -->
-    <!-- <script src="./assets/js/app.js"></script> -->
-     
-  </body>
+        // Check if device ID is available
+        if (window.__deviceId && window.SessionManager) {
+          sessionRequested = true;
+
+          // Session manager will be initialized by app.js when device connects
+          // Just request the session start after welcome screen
+          setTimeout(async () => {
+            if (window.SessionManager && !window.SessionManager.isActive()) {
+              await window.SessionManager.requestStart();
+            }
+          }, 2500);
+        } else {
+          // Check again after a short delay
+          setTimeout(waitForDeviceAndRequestSession, 500);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Start checking for device ID after modules load
+        setTimeout(waitForDeviceAndRequestSession, 1500);
+
+        // Bind event listener untuk tombol "Mulai Monitoring" (backup, sudah ada onclick juga)
+        setTimeout(() => {
+          const btnStartMonitoring = document.getElementById('btnStartMonitoringHero');
+          if (btnStartMonitoring && window.handleStartMonitoringClick) {
+            btnStartMonitoring.addEventListener('click', window.handleStartMonitoringClick);
+          }
+        }, 1000);
+      });
+    })();
+  </script>
+
+
+  <script>
+    // Opsi 1 (proxy): window.__GEMINI_PROXY_URL = 'https://your-proxy.example.com/gemini';
+    // Opsi 2 (direct): SitSenseAI.setConfig({ apiKey: 'YOUR_GEMINI_API_KEY' });
+
+    // Minta saran:
+    (async () => {
+      // Durasi duduk untuk konteks AI: gunakan \"detik logis\" sesuai time scale,
+      // supaya selaras dengan teks toast & timer di UI saat mode admin.
+      let logicalSec = window.SitSenseAlerts?.getElapsedSeconds?.() || 0;
+      try {
+        if (window.SitSenseTime && typeof window.SitSenseTime.getScale === 'function') {
+          const scale = window.SitSenseTime.getScale() || 1;
+          logicalSec = Math.floor(logicalSec * scale);
+        }
+      } catch (_) { }
+
+      // Wait for getPostureAdvice to be available
+      if (window.getPostureAdvice) {
+        const advice = await window.getPostureAdvice({
+          score: window.__postureScore || 62,
+          imbalance: window.__imbalance || { lr: 0.15, fb: 0.08 },
+          durationSec: logicalSec,
+          lastAlerts: 'soft',
+          historyContext: window.SitSenseHistory?.buildAIContext?.(),
+          historyStats: window.SitSenseHistory?.getAIMetadata?.()
+        });
+        // tampilkan di UI
+        if (window.showAdviceText && advice?.text) {
+          window.showAdviceText(advice.text);
+        }
+      } else {
+        console.warn('[SitSense] getPostureAdvice not available yet');
+      }
+    })();
+  </script>
+
+  <!-- Admin Floating Tools logic -->
+  <script>
+    (function () {
+      const FLOAT_ID = 'adminFloatingTools';
+      const MODE_KEY = 'sitsense_mode';
+
+      function getMode() {
+        try {
+          if (window.SitSenseTime && typeof window.SitSenseTime.getMode === 'function') {
+            return window.SitSenseTime.getMode();
+          }
+        } catch (_) { }
+        try {
+          const params = new URLSearchParams(window.location.search || '');
+          if (params.get('admin') === '1') return 'admin';
+        } catch (_) { }
+        try {
+          const flag = localStorage.getItem(MODE_KEY);
+          if (flag === 'admin') return 'admin';
+        } catch (_) { }
+        return 'user';
+      }
+
+      function getScale() {
+        try {
+          return window.SitSenseTime && typeof window.SitSenseTime.getScale === 'function'
+            ? window.SitSenseTime.getScale()
+            : 1;
+        } catch (_) {
+          return 1;
+        }
+      }
+
+      function setScale(v) {
+        try {
+          if (window.SitSenseTime && typeof window.SitSenseTime.setScale === 'function') {
+            window.SitSenseTime.setScale(v);
+          }
+        } catch (_) { }
+      }
+
+      // Active Stream Management (Postur Baik & Buruk)
+      let activeStreamInterval = null;
+      let activeStreamMode = 'none'; // 'none', 'good', 'bad'
+      let activeStreamRunning = false;
+      let activeStreamCounter = 0; // Counter untuk variasi nilai dinamis
+
+      function getStreamInterval() {
+        // Base interval 3000ms, dibagi dengan time scale
+        const scale = getScale();
+        const baseInterval = 3000;
+        return Math.max(100, Math.floor(baseInterval / scale)); // Minimum 100ms
+      }
+
+      function startActiveStream(mode) {
+        // Stop existing stream first (akan restart dengan interval baru)
+        stopActiveStream();
+
+        function ensureAndStart() {
+          if (typeof window.__injectPacket !== 'function') {
+            console.warn('[AdminTools] __injectPacket not ready, retrying...');
+            setTimeout(ensureAndStart, 600);
+            return;
+          }
+
+          if (activeStreamRunning) return;
+
+          activeStreamRunning = true;
+          activeStreamMode = mode;
+          activeStreamCounter = 0; // Reset counter
+
+          const modeLabels = {
+            good: 'Postur Baik',
+            bad: 'Postur Buruk'
+          };
+          const scale = getScale();
+          window.SitSenseUI?.showToast?.(`Stream aktif: ${modeLabels[mode]} (${scale.toFixed(1)}x)`, 'info');
+
+          const interval = getStreamInterval();
+
+          activeStreamInterval = setInterval(() => {
+            activeStreamCounter++;
+            const scale = getScale();
+            // Faktor variasi berdasarkan time scale (semakin cepat scale, semakin cepat variasi)
+            const variationSpeed = 0.1 * scale; // Variasi lebih cepat saat scale tinggi
+            let packet;
+
+            if (mode === 'good') {
+              // Nilai ideal untuk postur baik dengan variasi dinamis berdasarkan counter dan scale
+              const timeVariation = Math.sin(activeStreamCounter * variationSpeed) * 5; // Variasi sinusoidal yang disesuaikan dengan scale
+              const randomVariation = Math.floor(Math.random() * (10 + scale * 2)); // Random variation juga meningkat dengan scale
+              packet = {
+                fsr: Math.max(200, Math.min(260, 220 + Math.floor(Math.random() * 30) + Math.floor(timeVariation) + Math.floor(randomVariation * 0.3))), // 220-250, tekanan ideal dengan variasi
+                ultrasonic: {
+                  punggung_cm: Math.max(32, Math.min(42, 35 + Math.floor(Math.random() * 5) + Math.floor(timeVariation * 0.5) + Math.floor(randomVariation * 0.2))), // 35-40cm, jarak ideal
+                  leher_cm: Math.max(28, Math.min(38, 30 + Math.floor(Math.random() * 5) + Math.floor(timeVariation * 0.5) + Math.floor(randomVariation * 0.2)))      // 30-35cm, jarak ideal
+                }
+              };
+            } else if (mode === 'bad') {
+              // Nilai yang perlu perbaikan untuk postur buruk dengan variasi dinamis
+              const timeVariation = Math.sin(activeStreamCounter * variationSpeed * 1.5) * 2; // Variasi lebih cepat untuk postur buruk
+              const randomVariation = Math.floor(Math.random() * (5 + scale)); // Random variation meningkat dengan scale
+              packet = {
+                fsr: Math.max(130, Math.min(170, 140 + Math.floor(Math.random() * 20) + Math.floor(timeVariation) + Math.floor(randomVariation * 0.4))), // 140-160, tekanan rendah dengan variasi
+                ultrasonic: {
+                  punggung_cm: Math.max(5, Math.min(12, 7 + Math.floor(Math.random() * 3) + Math.floor(timeVariation * 0.3) + Math.floor(randomVariation * 0.15))),  // 7-10cm, terlalu dekat
+                  leher_cm: Math.max(6, Math.min(13, 8 + Math.floor(Math.random() * 3) + Math.floor(timeVariation * 0.3) + Math.floor(randomVariation * 0.15)))       // 8-11cm, terlalu dekat
+                }
+              };
+            } else {
+              return;
+            }
+
+            try {
+              window.__injectPacket(packet);
+            } catch (err) {
+              console.warn('[AdminTools] Failed to inject active stream packet', err);
+            }
+          }, interval);
+        }
+
+        ensureAndStart();
+      }
+
+      function stopActiveStream() {
+        if (!activeStreamRunning) return;
+        activeStreamRunning = false;
+        if (activeStreamInterval) {
+          clearInterval(activeStreamInterval);
+          activeStreamInterval = null;
+        }
+        // Jangan reset activeStreamMode ke 'none' - biarkan user memilih mode yang sama lagi
+        window.SitSenseUI?.showToast?.('Stream aktif dimatikan', 'info');
+        syncActiveStreamUI();
+      }
+
+      function syncActiveStreamUI() {
+        const btn = document.getElementById('btnToggleActiveStream');
+        const select = document.getElementById('activeStreamMode');
+        const label = document.getElementById('activeStreamLabel');
+        const icon = document.getElementById('activeStreamIcon');
+
+        if (!btn || !select || !label || !icon) return;
+
+        if (activeStreamRunning) {
+          btn.classList.add('btn-error');
+          btn.classList.remove('btn-gradient-outline');
+          label.textContent = 'Matikan stream';
+          icon.setAttribute('data-lucide', 'square');
+          // Disable select saat stream berjalan
+          select.disabled = false; // Allow change mode while running
+        } else {
+          btn.classList.remove('btn-error');
+          btn.classList.add('btn-gradient-outline');
+          label.textContent = 'Aktifkan stream';
+          icon.setAttribute('data-lucide', 'play');
+          select.disabled = false;
+        }
+
+        // Update select value
+        if (select) {
+          select.value = activeStreamMode;
+        }
+
+        // Refresh icons
+        if (window.lucide) {
+          setTimeout(() => window.lucide.createIcons(), 50);
+        }
+      }
+
+      // Drag & Drop functionality (Optimized for smooth movement)
+      function initDragAndDrop() {
+        const panel = document.getElementById('adminToolsPanel');
+        const header = document.getElementById('adminToolsHeader');
+        if (!panel || !header) return;
+
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startLeft = 0;
+        let startTop = 0;
+        let currentX = 0;
+        let currentY = 0;
+        let rafId = null;
+
+        // Cache panel dimensions untuk performa
+        let panelWidth = 0;
+        let panelHeight = 0;
+
+        function updatePanelDimensions() {
+          panelWidth = panel.offsetWidth || 280;
+          panelHeight = panel.offsetHeight || 200;
+        }
+
+        // Validate and clamp position (optimized)
+        function validatePosition(left, top) {
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
+          const minLeft = 0;
+          const maxLeft = Math.max(minLeft, viewportWidth - panelWidth);
+          const minTop = 0;
+          const maxTop = Math.max(minTop, viewportHeight - panelHeight);
+
+          return {
+            left: Math.max(minLeft, Math.min(left, maxLeft)),
+            top: Math.max(minTop, Math.min(top, maxTop))
+          };
+        }
+
+        // Update position menggunakan transform untuk smooth movement
+        function updatePosition() {
+          if (!isDragging) return;
+
+          const deltaX = currentX - startX;
+          const deltaY = currentY - startY;
+
+          let newLeft = startLeft + deltaX;
+          let newTop = startTop + deltaY;
+
+          // Validasi posisi
+          const valid = validatePosition(newLeft, newTop);
+
+          // Gunakan transform untuk smooth animation (lebih performant)
+          panel.style.transform = `translate(${valid.left - startLeft}px, ${valid.top - startTop}px)`;
+          panel.style.willChange = 'transform';
+
+          rafId = requestAnimationFrame(updatePosition);
+        }
+
+        // Load saved position dengan validasi
+        function loadSavedPosition() {
+          try {
+            const saved = localStorage.getItem('adminTools_position');
+            if (saved) {
+              const pos = JSON.parse(saved);
+              if (pos.left !== undefined && pos.top !== undefined) {
+                updatePanelDimensions();
+                const valid = validatePosition(pos.left, pos.top);
+                panel.style.position = 'fixed';
+                panel.style.left = valid.left + 'px';
+                panel.style.top = valid.top + 'px';
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+                panel.style.transform = 'none';
+              }
+            }
+          } catch (_) {
+            // Jika error, reset ke posisi default
+            panel.style.position = 'fixed';
+            panel.style.right = '2rem';
+            panel.style.bottom = '2rem';
+            panel.style.left = 'auto';
+            panel.style.top = 'auto';
+            panel.style.transform = 'none';
+          }
+        }
+
+        loadSavedPosition();
+        updatePanelDimensions();
+
+        // Save position dengan validasi (debounced)
+        let saveTimeout = null;
+        function savePosition() {
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(() => {
+            try {
+              const rect = panel.getBoundingClientRect();
+              const valid = validatePosition(rect.left, rect.top);
+              localStorage.setItem('adminTools_position', JSON.stringify({
+                left: valid.left,
+                top: valid.top
+              }));
+            } catch (_) { }
+          }, 100);
+        }
+
+        // Mouse down handler
+        function handleMouseDown(e) {
+          // Jangan drag jika klik tombol collapse atau elemen interaktif lainnya
+          if (e.target.closest('#adminToolsCollapseBtn') ||
+            e.target.closest('button') ||
+            e.target.closest('input') ||
+            e.target.closest('a')) {
+            return;
+          }
+
+          isDragging = true;
+          const rect = panel.getBoundingClientRect();
+          startX = e.clientX;
+          startY = e.clientY;
+          currentX = startX;
+          currentY = startY;
+          startLeft = rect.left;
+          startTop = rect.top;
+
+          // Reset transform dan gunakan left/top untuk positioning
+          panel.style.transform = 'none';
+          panel.style.left = startLeft + 'px';
+          panel.style.top = startTop + 'px';
+          panel.style.cursor = 'grabbing';
+          panel.style.userSelect = 'none';
+          panel.style.zIndex = '9999';
+          panel.style.willChange = 'transform';
+
+          // Start animation loop
+          rafId = requestAnimationFrame(updatePosition);
+
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // Mouse move handler (lightweight - hanya update koordinat)
+        function handleMouseMove(e) {
+          if (!isDragging) return;
+          currentX = e.clientX;
+          currentY = e.clientY;
+        }
+
+        // Mouse up handler
+        function handleMouseUp(e) {
+          if (isDragging) {
+            isDragging = false;
+
+            // Cancel animation frame
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = null;
+            }
+
+            // Finalize position dengan left/top
+            const deltaX = currentX - startX;
+            const deltaY = currentY - startY;
+            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
+            const valid = validatePosition(newLeft, newTop);
+
+            panel.style.transform = 'none';
+            panel.style.left = valid.left + 'px';
+            panel.style.top = valid.top + 'px';
+            panel.style.cursor = 'move';
+            panel.style.userSelect = '';
+            panel.style.zIndex = '40';
+            panel.style.willChange = 'auto';
+
+            savePosition();
+          }
+        }
+
+        // Bind events dengan passive untuk performa
+        header.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove, { passive: true });
+        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('mouseleave', handleMouseUp);
+
+        // Touch support (optimized)
+        function handleTouchStart(e) {
+          if (e.target.closest('#adminToolsCollapseBtn') ||
+            e.target.closest('button') ||
+            e.target.closest('input')) {
+            return;
+          }
+
+          isDragging = true;
+          const touch = e.touches[0];
+          const rect = panel.getBoundingClientRect();
+          startX = touch.clientX;
+          startY = touch.clientY;
+          currentX = startX;
+          currentY = startY;
+          startLeft = rect.left;
+          startTop = rect.top;
+
+          panel.style.transform = 'none';
+          panel.style.left = startLeft + 'px';
+          panel.style.top = startTop + 'px';
+          panel.style.zIndex = '9999';
+          panel.style.willChange = 'transform';
+
+          rafId = requestAnimationFrame(updatePosition);
+
+          e.preventDefault();
+        }
+
+        function handleTouchMove(e) {
+          if (!isDragging) return;
+          const touch = e.touches[0];
+          currentX = touch.clientX;
+          currentY = touch.clientY;
+          e.preventDefault();
+        }
+
+        function handleTouchEnd(e) {
+          if (isDragging) {
+            isDragging = false;
+
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = null;
+            }
+
+            const deltaX = currentX - startX;
+            const deltaY = currentY - startY;
+            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
+            const valid = validatePosition(newLeft, newTop);
+
+            panel.style.transform = 'none';
+            panel.style.left = valid.left + 'px';
+            panel.style.top = valid.top + 'px';
+            panel.style.zIndex = '40';
+            panel.style.willChange = 'auto';
+
+            savePosition();
+          }
+        }
+
+        header.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('touchcancel', handleTouchEnd);
+
+        // Handle window resize - re-validate position
+        let resizeTimeout = null;
+        window.addEventListener('resize', function () {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+            updatePanelDimensions();
+            const rect = panel.getBoundingClientRect();
+            const valid = validatePosition(rect.left, rect.top);
+            if (Math.abs(rect.left - valid.left) > 1 || Math.abs(rect.top - valid.top) > 1) {
+              panel.style.left = valid.left + 'px';
+              panel.style.top = valid.top + 'px';
+              savePosition();
+            }
+          }, 150);
+        });
+      }
+
+      // Collapse/Expand functionality
+      function initCollapse() {
+        const panel = document.getElementById('adminToolsPanel');
+        const collapseBtn = document.getElementById('adminToolsCollapseBtn');
+        if (!panel || !collapseBtn) return;
+
+        // Load saved state
+        try {
+          const saved = localStorage.getItem('adminTools_collapsed');
+          if (saved === 'true') {
+            panel.classList.add('admin-tools-collapsed');
+          }
+        } catch (_) { }
+
+        collapseBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          panel.classList.toggle('admin-tools-collapsed');
+
+          // Save state
+          try {
+            localStorage.setItem('adminTools_collapsed', panel.classList.contains('admin-tools-collapsed') ? 'true' : 'false');
+          } catch (_) { }
+
+          // Refresh icons
+          if (window.lucide) window.lucide.createIcons();
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        const mode = getMode();
+        const panel = document.getElementById(FLOAT_ID);
+        if (!panel) return;
+
+        if (mode !== 'admin') {
+          // Tetap sembunyikan untuk user biasa
+          panel.classList.add('hidden');
+          return;
+        }
+
+        panel.classList.remove('hidden');
+
+        // Initialize drag & drop and collapse
+        initDragAndDrop();
+        initCollapse();
+
+        // Time scale sync
+        const scaleInput = document.getElementById('floatTimeScaleInput');
+        const scaleLabel = document.getElementById('floatTimeScaleLabel');
+        const currentScale = getScale();
+        if (scaleInput) {
+          const val = Math.min(30, Math.max(1, Math.round(currentScale || 1)));
+          scaleInput.value = String(val);
+        }
+        if (scaleLabel) {
+          scaleLabel.textContent = `${(currentScale || 1).toFixed(1)}x`;
+        }
+
+        if (scaleInput) {
+          scaleInput.addEventListener('input', function (e) {
+            const raw = parseFloat(e.target.value);
+            const val = Number.isFinite(raw) ? raw : 1;
+            setScale(val);
+            if (scaleLabel) {
+              scaleLabel.textContent = `${val.toFixed(1)}x`;
+            }
+            // Restart active stream dengan interval baru jika sedang berjalan
+            if (activeStreamRunning && activeStreamMode !== 'none') {
+              const currentMode = activeStreamMode;
+              stopActiveStream();
+              setTimeout(() => {
+                startActiveStream(currentMode);
+              }, 100);
+            }
+          });
+        }
+
+        // Update label jika time scale diubah dari halaman lain (settings)
+        window.addEventListener('sitsense:timeScaleChanged', function (ev) {
+          const scale = ev?.detail?.scale ?? getScale();
+          if (scaleLabel) {
+            scaleLabel.textContent = `${(scale || 1).toFixed(1)}x`;
+          }
+          if (scaleInput) {
+            const v = Math.min(30, Math.max(1, Math.round(scale || 1)));
+            scaleInput.value = String(v);
+          }
+          // Restart active stream dengan interval baru jika sedang berjalan
+          if (activeStreamRunning && activeStreamMode !== 'none') {
+            const currentMode = activeStreamMode;
+            stopActiveStream();
+            setTimeout(() => {
+              startActiveStream(currentMode);
+            }, 100);
+          }
+        });
+
+        // Active Stream controls
+        const activeStreamSelect = document.getElementById('activeStreamMode');
+        const activeStreamBtn = document.getElementById('btnToggleActiveStream');
+
+        if (activeStreamSelect) {
+          activeStreamSelect.addEventListener('change', function (e) {
+            const selectedMode = e.target.value;
+
+            // Jika stream sedang berjalan, restart dengan mode baru
+            if (activeStreamRunning) {
+              if (selectedMode === 'none') {
+                stopActiveStream();
+                activeStreamMode = 'none';
+              } else {
+                stopActiveStream();
+                activeStreamMode = selectedMode;
+                startActiveStream(selectedMode);
+              }
+            } else {
+              // Update mode tanpa memulai stream
+              activeStreamMode = selectedMode;
+            }
+            syncActiveStreamUI();
+          });
+        }
+
+        if (activeStreamBtn) {
+          activeStreamBtn.addEventListener('click', function () {
+            const selectedMode = activeStreamSelect?.value || 'none';
+
+            if (activeStreamRunning) {
+              stopActiveStream();
+            } else {
+              if (selectedMode === 'none') {
+                window.SitSenseUI?.showToast?.('Pilih mode stream terlebih dahulu', 'warn');
+                return;
+              }
+              startActiveStream(selectedMode);
+            }
+            syncActiveStreamUI();
+          });
+        }
+
+        // Initialize active stream UI
+        syncActiveStreamUI();
+
+        // Exit Admin Mode button
+        function exitAdminMode() {
+          // Konfirmasi sebelum keluar
+          if (!confirm('Yakin ingin keluar dari mode admin? Panel admin tools akan disembunyikan.')) {
+            return;
+          }
+
+          // Hentikan stream aktif jika sedang berjalan
+          if (activeStreamRunning) {
+            stopActiveStream();
+          }
+
+          // Reset time scale ke 1x
+          setScale(1);
+          const scaleInputEl = document.getElementById('floatTimeScaleInput');
+          const scaleLabelEl = document.getElementById('floatTimeScaleLabel');
+          if (scaleInputEl) {
+            scaleInputEl.value = '1';
+          }
+          if (scaleLabelEl) {
+            scaleLabelEl.textContent = '1.0x';
+          }
+
+          // Hapus flag dari localStorage
+          try {
+            localStorage.removeItem(MODE_KEY);
+          } catch (_) { }
+
+          // Sembunyikan admin tools panel
+          const panelEl = document.getElementById(FLOAT_ID);
+          if (panelEl) {
+            panelEl.classList.add('hidden');
+          }
+
+          // Notifikasi
+          window.SitSenseUI?.showToast?.('Mode admin dinonaktifkan', 'info');
+
+          // Dispatch event untuk memberitahu komponen lain
+          window.dispatchEvent(new CustomEvent('sitsense:adminModeExited'));
+        }
+
+        const btnExitAdmin = document.getElementById('btnExitAdminMode');
+        if (btnExitAdmin) {
+          btnExitAdmin.addEventListener('click', exitAdminMode);
+        }
+
+        // Refresh icons setelah semua elemen siap
+        setTimeout(() => {
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }, 100);
+      });
+    })();
+  </script>
+
+  <!-- <script src="./assets/js/tts-google.js"></script> -->
+  <!-- <script src="./assets/js/app.js"></script> -->
+
+  <script src="./assets/js/chat-ui.js"></script>
+</body>
+
 </html>

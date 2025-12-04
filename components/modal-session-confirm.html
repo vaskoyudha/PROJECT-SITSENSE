@@ -1,0 +1,59 @@
+<!-- components/modal-session-confirm.html -->
+<!-- Modal konfirmasi untuk memulai Smart Monitoring Session -->
+<input type="checkbox" id="session_modal_toggle" class="modal-toggle" />
+<div id="sessionConfirmModal" class="modal" role="dialog">
+  <div class="modal-box w-11/12 max-w-lg glassy-card card-border">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="p-3 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/10">
+        <i data-lucide="activity" class="h-6 w-6 text-cyan-300"></i>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold">Mulai Sesi Monitoring?</h3>
+        <p class="text-sm text-slate-400">Smart Monitoring Session</p>
+      </div>
+    </div>
+
+    <div class="space-y-3 mb-6">
+      <p class="text-sm text-slate-300">
+        Sistem akan mulai merekam data postur Anda secara aktif dan memberikan rekomendasi personal berdasarkan analisis real-time.
+      </p>
+      
+      <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+          <div class="text-xs text-slate-300">
+            <strong>Perekaman Data:</strong> Semua data postur, skor, dan durasi akan disimpan
+          </div>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="alert-circle" class="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0"></i>
+          <div class="text-xs text-slate-300">
+            <strong>Sistem Eskalasi:</strong> Peringatan visual → audio → AI voice intervention
+          </div>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="clock" class="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0"></i>
+          <div class="text-xs text-slate-300">
+            <strong>Analisis Real-time:</strong> Coach AI akan menganalisis dan memberikan saran
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-action">
+      <button type="button" id="btnCancelSession" class="btn btn-ghost">
+        Batal
+      </button>
+      <button type="button" id="btnStartSession" class="btn btn-gradient-primary normal-case">
+        <i data-lucide="play" class="h-4 w-4"></i>
+        Mulai Sekarang
+      </button>
+    </div>
+  </div>
+  <label class="modal-backdrop" for="session_modal_toggle">Tutup</label>
+</div>
+
+
+
+
+
