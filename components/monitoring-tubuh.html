@@ -358,7 +358,9 @@
           // Fungsi normalisasi untuk digunakan di listener
           const normalizeValue = (value, sensorType) => {
             if (!Number.isFinite(value) || value <= 0) return null;
-            if (value > 50) {
+            // Hanya normalisasi jika nilai > 100 (konsisten dengan app.js)
+            // Nilai sensor yang valid (5-15cm untuk back, 20-40cm untuk neck) tidak perlu dinormalisasi
+            if (value > 100) {
               const div10 = value / 10;
               const div100 = value / 100;
               if (sensorType === 'back') {
@@ -466,7 +468,9 @@
           // Fungsi untuk normalisasi nilai (sama seperti di app.js)
           const normalizeValue = (value, sensorType) => {
             if (!Number.isFinite(value) || value <= 0) return null;
-            if (value > 50) {
+            // Hanya normalisasi jika nilai > 100 (konsisten dengan app.js)
+            // Nilai sensor yang valid (5-15cm untuk back, 20-40cm untuk neck) tidak perlu dinormalisasi
+            if (value > 100) {
               const div10 = value / 10;
               const div100 = value / 100;
               if (sensorType === 'back') {
@@ -559,7 +563,9 @@
       const getStatus = (distance, sensorType = 'back') => {
         const normalizeValue = (value, type) => {
           if (!Number.isFinite(value) || value <= 0) return null;
-          if (value > 50) {
+          // Hanya normalisasi jika nilai > 100 (konsisten dengan app.js)
+          // Nilai sensor yang valid (5-15cm untuk back, 20-40cm untuk neck) tidak perlu dinormalisasi
+          if (value > 100) {
             const div10 = value / 10;
             const div100 = value / 100;
             if (type === 'back') {
@@ -598,7 +604,9 @@
         // Normalisasi nilai untuk ditampilkan
         const normalizeValue = (value, type) => {
           if (!Number.isFinite(value) || value <= 0) return null;
-          if (value > 50) {
+          // Hanya normalisasi jika nilai > 100 (konsisten dengan app.js)
+          // Nilai sensor yang valid (5-15cm untuk back, 20-40cm untuk neck) tidak perlu dinormalisasi
+          if (value > 100) {
             const div10 = value / 10;
             const div100 = value / 100;
             if (type === 'back') {
