@@ -19,7 +19,7 @@
 (function () {
   const DEFAULT_MODEL = 'gemini-1.5-flash'; // Model yang lebih cepat dan hemat biaya
   // Default API key (akan di-override oleh settings jika ada)
-  const DEFAULT_API_KEY = 'AIzaSyD4MMi35hgVREfezwi8NlAZ5MDxpJwp0aI';
+  const DEFAULT_API_KEY = 'AIzaSyCE1aUJ1c83Ry5Lt4Eoq6jafJ7pyd6sVx4';
 
   const STATE = {
     apiKey: DEFAULT_API_KEY, // Default, akan di-override oleh setConfig dari settings
