@@ -112,7 +112,7 @@
         const form = document.getElementById('loginForm');
         const msg = document.getElementById('formMsg');
         const params = new URLSearchParams(location.search);
-        const next = params.get('next') || '../index.html?launched=true';
+        const next = params.get('next') || '../monitor.html?launched=true';
         const submitBtn = form.querySelector('button[type="submit"]');
         const defaultBtnText = submitBtn ? submitBtn.textContent : '';
 

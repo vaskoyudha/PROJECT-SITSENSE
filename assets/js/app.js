@@ -1,9 +1,13 @@
 // =================================================================
-// 1. KONFIGURASI DAN INISIALISASI FIREBASE (seperti test connection)
+// 1. KONFIGURASI DAN INISIALISASI
 // =================================================================
-// Firebase sudah diinisialisasi di index.html, gunakan yang sudah ada
-const auth = window.firebaseAuth || firebase.auth();
-const db = window.firebaseDb || firebase.database();
+// Data source: 'mqtt' (new), 'firebase' (legacy), or 'auto' (try mqtt first)
+const DATA_SOURCE = window.SITSENSE_DATA_SOURCE ||
+  new URLSearchParams(window.location.search).get('source') || 'auto';
+
+// Firebase sudah diinisialisasi di monitor.html, gunakan yang sudah ada
+const auth = window.firebaseAuth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+const db = window.firebaseDb || (typeof firebase !== 'undefined' ? firebase.database() : null);
 
 // Toggle verbose logging via ?debug=1
 const __DEBUG_MODE__ = new URLSearchParams(window.location.search).get('debug') === '1';
@@ -23,6 +27,8 @@ if (!__DEBUG_MODE__) {
 // Variables global untuk referensi
 let liveRef = null;
 let infoRef = null;
+let currentDataSource = null; // track active data source
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   // =================================================================
@@ -59,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // =================================================================
   // Simpan nilai balance terakhir untuk di-update ulang setelah panel-parameters dimuat
   let lastBalanceData = null;
-  
+
   // Listen untuk event panel-parameters-loaded
   window.addEventListener('panel-parameters-loaded', () => {
     console.log('[SitSense] Panel parameters loaded, updating balance UI...');
@@ -89,14 +95,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   let balanceCheckRuns = 0;
   const MAX_BALANCE_CHECK_RUNS = 12;
   let balanceObserverAttached = false;
-  
+
   function startBalanceCheckInterval() {
     // Hapus interval lama jika ada
     if (balanceCheckInterval) {
       clearInterval(balanceCheckInterval);
     }
     balanceCheckRuns = 0;
-    
+
     // Jalankan interval check setiap 2 detik
     balanceCheckInterval = setInterval(() => {
       balanceCheckRuns += 1;
@@ -106,9 +112,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fbValElements = document.querySelectorAll('#balanceFBVal');
         const lrFillElements = document.querySelectorAll('#balanceLRFill');
         const fbFillElements = document.querySelectorAll('#balanceFBFill');
-        
+
         let needsUpdate = false;
-        
+
         // Cek apakah ada elemen yang masih menunjukkan nilai lama (50%)
         lrValElements.forEach(el => {
           const currentText = el.textContent.trim();
@@ -118,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('[SitSense] Detected stale FSR value:', currentText, 'Expected:', expectedText);
           }
         });
-        
+
         fbValElements.forEach(el => {
           const currentText = el.textContent.trim();
           const expectedValue = Math.round(
@@ -129,7 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('[SitSense] Detected stale FB value:', currentText, 'Expected:', expectedValue);
           }
         });
-        
+
         // Jika ada elemen yang perlu update, panggil updateBalanceUI lagi
         if (needsUpdate && (lrValElements.length > 0 || fbValElements.length > 0)) {
           console.log('[SitSense] Force updating balance UI due to stale values...');
@@ -139,13 +145,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.updateBalanceUI(lastBalanceData.fsrPct, lastBalanceData.backDist, lastBalanceData.neckDist);
           }
         }
-        
+
         // Jika elemen belum ditemukan, tunggu dan coba lagi
         const allElementsReady = lrValElements.length > 0 && fbValElements.length > 0 &&
           lrFillElements.length > 0 && fbFillElements.length > 0;
         if (!allElementsReady) {
           console.log('[SitSense] Waiting for all balance elements to load... (Found:',
-                      lrValElements.length, 'FSR,', fbValElements.length, 'FB)');
+            lrValElements.length, 'FSR,', fbValElements.length, 'FB)');
         }
         if ((allElementsReady && !needsUpdate) || balanceCheckRuns >= MAX_BALANCE_CHECK_RUNS) {
           clearInterval(balanceCheckInterval);
@@ -155,14 +161,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }, 2000); // Check setiap 2 detik
   }
-  
+
   // Helper function untuk menghitung neck-back balance (dari logika updateBalanceUI)
   function calculateNeckBackBalance(backDist, neckDist) {
-    if (!backDist || !neckDist || backDist <= 0 || neckDist <= 0 || 
-        backDist === -1 || neckDist === -1 || !isFinite(backDist) || !isFinite(neckDist)) {
+    if (!backDist || !neckDist || backDist <= 0 || neckDist <= 0 ||
+      backDist === -1 || neckDist === -1 || !isFinite(backDist) || !isFinite(neckDist)) {
       return 0;
     }
-    
+
     let backScore = 0;
     if (backDist >= 20 && backDist <= 35) {
       backScore = 100;
@@ -175,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (backDist > 0 && backDist < 10) {
       backScore = Math.max(0, (backDist / 10) * 60);
     }
-    
+
     let neckScore = 0;
     if (neckDist >= 25 && neckDist <= 35) {
       neckScore = 100;
@@ -188,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (neckDist > 0 && neckDist < 15) {
       neckScore = Math.max(0, (neckDist / 15) * 50);
     }
-    
+
     const diff = Math.abs(neckDist - backDist);
     let balanceBonus = 0;
     if (diff <= 5) {
@@ -198,28 +204,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (diff <= 15) {
       balanceBonus = 5;
     }
-    
+
     return Math.min(100, Math.max(0, Math.round((backScore + neckScore) / 2 + balanceBonus)));
   }
-  
+
   // MutationObserver untuk mendeteksi ketika elemen baru ditambahkan ke DOM
   const balanceObserver = new MutationObserver((mutations) => {
     let shouldUpdate = false;
-    
+
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === 1) { // Element node
           // Cek apakah node yang ditambahkan mengandung elemen balance
-          if (node.id === 'balanceLRVal' || node.id === 'balanceFBVal' || 
-              node.id === 'balanceLRFill' || node.id === 'balanceFBFill' ||
-              node.querySelector && (node.querySelector('#balanceLRVal') || node.querySelector('#balanceFBVal') ||
+          if (node.id === 'balanceLRVal' || node.id === 'balanceFBVal' ||
+            node.id === 'balanceLRFill' || node.id === 'balanceFBFill' ||
+            node.querySelector && (node.querySelector('#balanceLRVal') || node.querySelector('#balanceFBVal') ||
               node.querySelector('#balanceLRFill') || node.querySelector('#balanceFBFill'))) {
             shouldUpdate = true;
           }
         }
       });
     });
-    
+
     if (shouldUpdate && lastBalanceData) {
       console.log('[SitSense] New balance elements detected, updating...');
       setTimeout(() => {
@@ -230,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }, 50);
     }
-    
+
     if (shouldUpdate && balanceObserverAttached) {
       const ready =
         document.getElementById('balanceLRVal') &&
@@ -259,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     balanceObserverAttached = true;
   }
   attachBalanceObserver();
-  
+
   setTimeout(() => {
     startBalanceCheckInterval();
     console.log('[SitSense] Balance check interval started');
@@ -282,7 +288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const m = Math.floor(sec / 60); const s = sec % 60;
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
-  function setText(el, val) { 
+  function setText(el, val) {
     if (el) {
       el.textContent = val;
     }
@@ -300,22 +306,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Balance 1: Distribusi Tekanan (FSR) - menunjukkan intensitas tekanan
     // Jika FSR 0, gunakan indikator berdasarkan konsistensi data ultrasonic
     let fsrBalance = Math.min(100, Math.max(0, fsrPct));
-    
+
     // Jika FSR 0, tapi ada data ultrasonic yang konsisten, beri indikator minimal
     if (fsrBalance === 0 && backDist > 0 && neckDist > 0) {
       fsrBalance = 5; // Minimal indicator bahwa sistem aktif
     }
-    
+
     // Balance 2: Keseimbangan Leher ↔ Punggung - menunjukkan keselarasan postur
     // Disesuaikan dengan range yang lebih realistis berdasarkan data aktual
     let neckBackBalance = 0;
-    if (backDist !== null && neckDist !== null && backDist > 0 && neckDist > 0 && 
-        backDist !== -1 && neckDist !== -1 && isFinite(backDist) && isFinite(neckDist)) {
-      
+    if (backDist !== null && neckDist !== null && backDist > 0 && neckDist > 0 &&
+      backDist !== -1 && neckDist !== -1 && isFinite(backDist) && isFinite(neckDist)) {
+
       // Range ideal disesuaikan berdasarkan data aktual:
       // Back: 20-35cm (lebih fleksibel dari 5-15cm karena data menunjukkan ~26-31cm)
       // Neck: 25-35cm (lebih fleksibel dari 30-45cm karena data menunjukkan ~26-27cm)
-      
+
       let backScore = 0;
       if (backDist >= 20 && backDist <= 35) {
         backScore = 100; // Ideal range yang disesuaikan
@@ -328,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (backDist > 0 && backDist < 10) {
         backScore = Math.max(0, (backDist / 10) * 60); // Terlalu dekat
       }
-      
+
       let neckScore = 0;
       if (neckDist >= 25 && neckDist <= 35) {
         neckScore = 100; // Ideal range yang disesuaikan
@@ -341,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (neckDist > 0 && neckDist < 15) {
         neckScore = Math.max(0, (neckDist / 15) * 50); // Terlalu dekat
       }
-      
+
       // Hitung keseimbangan relatif: seberapa baik perbedaan antara neck dan back
       // Jika perbedaannya kecil (mirip), berarti postur lebih seimbang
       const diff = Math.abs(neckDist - backDist);
@@ -353,27 +359,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (diff <= 15) {
         balanceBonus = 5; // Sedang (perbedaan 10-15cm)
       }
-      
+
       // Rata-rata score dengan bonus keseimbangan
       neckBackBalance = Math.round((backScore + neckScore) / 2 + balanceBonus);
       neckBackBalance = Math.min(100, Math.max(0, neckBackBalance));
     }
-    
-    // Update semua elemen balance (bisa ada beberapa karena duplikasi di index.html dan panel-parameters.html)
+
+    // Update semua elemen balance (bisa ada beberapa karena duplikasi di monitor.html dan panel-parameters.html)
     // Gunakan querySelectorAll untuk menemukan semua elemen dengan ID yang sama
     const updateBalanceElements = () => {
       const lrFillElements = document.querySelectorAll('#balanceLRFill');
       const fbFillElements = document.querySelectorAll('#balanceFBFill');
       const lrValElements = document.querySelectorAll('#balanceLRVal');
       const fbValElements = document.querySelectorAll('#balanceFBVal');
-      
+
       // Update FSR balance (Distribusi Tekanan)
       lrFillElements.forEach((el, index) => {
         if (el) {
           // Update width dengan !important untuk override CSS apapun
           el.style.setProperty('width', fsrBalance + '%', 'important');
           el.style.width = fsrBalance + '%';
-          
+
           // Set gradient berdasarkan nilai balance
           let gradient = '';
           if (fsrBalance === 0) {
@@ -397,21 +403,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             gradient = 'linear-gradient(90deg, #2563eb 0%, #3b82f6 30%, #06b6d4 70%, #22d3ee 100%)';
             el.style.setProperty('box-shadow', '0 0 15px rgba(34, 211, 238, 0.6)', 'important');
           }
-          
+
           el.style.setProperty('background', gradient, 'important');
           el.style.setProperty('background-image', gradient, 'important');
-          
+
           // Verifikasi update berhasil
           const computedWidth = window.getComputedStyle(el).width;
           const expectedWidth = fsrBalance + '%';
-          
+
           // Debug: log update untuk elemen pertama dan kedua
           if (index < 2 && (!window._lastBalanceLog || Date.now() - window._lastBalanceLog > 2000)) {
             console.log(`[SitSense] Updated FSR element ${index + 1} to ${fsrBalance}% (computed: ${computedWidth})`);
           }
         }
       });
-      
+
       lrValElements.forEach((el, index) => {
         if (el) {
           const newValue = Math.round(fsrBalance) + '%';
@@ -423,7 +429,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (el.firstChild) {
             el.firstChild.textContent = newValue;
           }
-          
+
           // Debug log dengan verifikasi
           if (index < 2 && (!window._lastBalanceLog || Date.now() - window._lastBalanceLog > 2000)) {
             const actualValue = el.textContent.trim();
@@ -436,7 +442,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.warn(`[SitSense] FSR value element ${index} not found`);
         }
       });
-      
+
       // Jika tidak ada elemen yang ditemukan, coba lagi dengan selector yang lebih spesifik
       if (lrValElements.length === 0) {
         console.warn('[SitSense] No FSR value elements found, trying alternative selector...');
@@ -454,14 +460,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         });
       }
-      
+
       // Update Neck-Back balance (Keseimbangan Leher ↔ Punggung)
       fbFillElements.forEach((el, index) => {
         if (el) {
           // Update width dengan !important untuk override CSS apapun
           el.style.setProperty('width', neckBackBalance + '%', 'important');
           el.style.width = neckBackBalance + '%';
-          
+
           // Set gradient berdasarkan nilai balance
           let gradient = '';
           if (neckBackBalance === 0) {
@@ -485,16 +491,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             gradient = 'linear-gradient(90deg, #047857 0%, #059669 30%, #10b981 70%, #34d399 100%)';
             el.style.setProperty('box-shadow', '0 0 15px rgba(52, 211, 153, 0.6)', 'important');
           }
-          
+
           el.style.setProperty('background', gradient, 'important');
           el.style.setProperty('background-image', gradient, 'important');
-          
+
           // Verifikasi update berhasil - hitung expected width dalam pixel
           const computedWidth = window.getComputedStyle(el).width;
           const actualWidth = parseFloat(computedWidth);
           const parentWidth = el.parentElement ? parseFloat(window.getComputedStyle(el.parentElement).width) : 0;
           const expectedWidthPx = parentWidth > 0 ? (neckBackBalance / 100) * parentWidth : 0;
-          
+
           // Debug: log update untuk elemen pertama dan kedua (hanya jika ada perbedaan signifikan)
           if (index < 2 && (!window._lastBalanceLog || Date.now() - window._lastBalanceLog > 2000)) {
             const widthDiff = Math.abs(actualWidth - expectedWidthPx);
@@ -507,7 +513,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.warn(`[SitSense] FB fill element ${index} not found`);
         }
       });
-      
+
       fbValElements.forEach((el, index) => {
         if (el) {
           const newValue = Math.round(neckBackBalance) + '%';
@@ -519,7 +525,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (el.firstChild) {
             el.firstChild.textContent = newValue;
           }
-          
+
           // Debug log dengan verifikasi
           if (index < 2 && (!window._lastBalanceLog || Date.now() - window._lastBalanceLog > 2000)) {
             const actualValue = el.textContent.trim();
@@ -532,7 +538,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.warn(`[SitSense] FB value element ${index} not found`);
         }
       });
-      
+
       // Jika tidak ada elemen yang ditemukan, coba lagi dengan selector yang lebih spesifik
       if (fbValElements.length === 0) {
         console.warn('[SitSense] No FB value elements found, trying alternative selector...');
@@ -550,7 +556,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         });
       }
-      
+
       return {
         lrFill: lrFillElements.length,
         fbFill: fbFillElements.length,
@@ -558,27 +564,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         fbVal: fbValElements.length
       };
     };
-    
+
     // Panggil update
     const elementCounts = updateBalanceElements();
-    
+
     // Jika tidak semua elemen ditemukan, coba lagi setelah delay
     if (elementCounts.lrFill < 2 || elementCounts.fbFill < 2 || elementCounts.lrVal < 2 || elementCounts.fbVal < 2) {
       // Retry setelah 100ms untuk memastikan semua elemen sudah dimuat
       setTimeout(() => {
         const retryCounts = updateBalanceElements();
         console.log('[SitSense] Retry update - FSR Fill:', retryCounts.lrFill, 'FB Fill:', retryCounts.fbFill,
-                    'FSR Val:', retryCounts.lrVal, 'FB Val:', retryCounts.fbVal);
+          'FSR Val:', retryCounts.lrVal, 'FB Val:', retryCounts.fbVal);
       }, 100);
     }
-    
+
     // Log setiap 2 detik untuk mengurangi spam
     if (!window._lastBalanceLog || Date.now() - window._lastBalanceLog > 2000) {
-      console.log('[SitSense] Balance UI Update - FSR:', fsrBalance + '%', 'Leher-Punggung:', neckBackBalance + '%', 
-                  '(Back:', backDist?.toFixed(2), 'cm, Neck:', neckDist?.toFixed(2), 'cm)');
+      console.log('[SitSense] Balance UI Update - FSR:', fsrBalance + '%', 'Leher-Punggung:', neckBackBalance + '%',
+        '(Back:', backDist?.toFixed(2), 'cm, Neck:', neckDist?.toFixed(2), 'cm)');
       console.log('[SitSense] Elements found - FSR Fill:', elementCounts.lrFill, 'FB Fill:', elementCounts.fbFill,
-                  'FSR Val:', elementCounts.lrVal, 'FB Val:', elementCounts.fbVal);
-      
+        'FSR Val:', elementCounts.lrVal, 'FB Val:', elementCounts.fbVal);
+
       // Jika tidak ada elemen yang ditemukan, log warning
       if (elementCounts.lrFill === 0 || elementCounts.fbFill === 0) {
         console.warn('[SitSense] Balance elements not found! Make sure DOM is loaded.');
@@ -588,7 +594,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         console.log('[SitSense] Successfully updated', elementCounts.lrFill, 'FSR elements and', elementCounts.fbFill, 'FB elements');
       }
-      
+
       // Verifikasi nilai text ter-update
       const testLrVal = document.querySelector('#balanceLRVal');
       const testFbVal = document.querySelector('#balanceFBVal');
@@ -598,28 +604,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (testFbVal) {
         console.log('[SitSense] FB value element text:', testFbVal.textContent, 'Expected:', Math.round(neckBackBalance) + '%');
       }
-      
+
       window._lastBalanceLog = Date.now();
     }
   }
-  
+
   // Export fungsi updateBalanceUI agar bisa dipanggil dari event listener
   window.updateBalanceUI = updateBalanceUI;
 
   function synthMatrixFromFSR(pct, rows = 8, cols = 8, backDist = null, neckDist = null) {
     // Jika FSR 0, gunakan data ultrasonic untuk membuat visualisasi
     let base = clamp(pct / 100, 0, 1);
-    
+
     // Fallback: Jika FSR 0 tapi ada data ultrasonic, buat visualisasi minimal
-    if (base === 0 && backDist !== null && neckDist !== null && 
-        backDist > 0 && neckDist > 0 && backDist !== -1 && neckDist !== -1) {
+    if (base === 0 && backDist !== null && neckDist !== null &&
+      backDist > 0 && neckDist > 0 && backDist !== -1 && neckDist !== -1) {
       // Gunakan rata-rata normalized dari back dan neck sebagai base
       // Normalisasi: back (20-35cm ideal) dan neck (25-35cm ideal)
       const backNorm = clamp((backDist - 15) / 20, 0, 1); // 15-35cm -> 0-1
       const neckNorm = clamp((neckDist - 20) / 15, 0, 1); // 20-35cm -> 0-1
       base = (backNorm + neckNorm) / 2 * 0.3; // Max 30% untuk indikator visual
     }
-    
+
     const cx = (cols - 1) / 2, cy = (rows - 1) / 2, maxd = Math.hypot(cx, cy) || 1;
     const out = [];
     for (let r = 0; r < rows; r++) {
@@ -640,7 +646,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Pastikan score adalah number yang valid
     const score = typeof totalScore === 'number' && isFinite(totalScore) ? totalScore : 0;
     const label = score >= 80 ? 'Baik' : score >= 60 ? 'Perlu Koreksi' : score > 0 ? 'Buruk' : 'Menunggu Data';
-    
+
     if (postureScoreEl) {
       setText(postureScoreEl, score);
     }
@@ -650,7 +656,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (postureScoreBarEl) {
       postureScoreBarEl.value = score;
     }
-    
+
     try {
       window.SitSenseCharts?.updateQuality?.(label);
     } catch (e) {
@@ -662,7 +668,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const back = Math.round(scores.back || 0);
     const neck = Math.round(scores.neck || 0);
     const pressure = Math.round(scores.pressure || 0);
-    
+
     if (backScoreEl) {
       setText(backScoreEl, back);
     }
@@ -684,13 +690,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateDailyStats() {
-    if (sessionData.scores.length === 0) { 
-      setText(avgScoreEl, '—'); 
-      setText(goodPostureCountEl, '0'); 
+    if (sessionData.scores.length === 0) {
+      setText(avgScoreEl, '—');
+      setText(goodPostureCountEl, '0');
       setText(badPostureCountEl, '0');
       // Update hero stats
       updateHeroStats();
-      return; 
+      return;
     }
     const avg = sessionData.scores.reduce((sum, s) => sum + s, 0) / sessionData.scores.length;
     setText(avgScoreEl, Math.round(avg));
@@ -746,10 +752,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       heroBadPostureEl.textContent = sessionData.badCount || 0;
     }
   }
-  
+
   // Export untuk akses global
   window.updateHeroStats = updateHeroStats;
-  
+
   // Initialize hero stats on load
   setTimeout(() => {
     updateHeroStats();
@@ -774,18 +780,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const neckValEl = document.getElementById('ultraNeckVal');
     const backStatusEl = document.getElementById('ultraBackStatus');
     const neckStatusEl = document.getElementById('ultraNeckStatus');
-    
+
     // Fungsi untuk konversi nilai jika terlalu besar (mungkin dalam satuan berbeda)
     const normalizeValue = (value, sensorType) => {
       if (!Number.isFinite(value) || value <= 0) return null;
-      
+
       // Jika nilai > 50 cm (Max Range sensor), coba konversi
       if (value > 50) {
         // Coba bagi dengan 10 (mungkin dalam 0.1mm)
         const div10 = value / 10;
         // Coba bagi dengan 100 (mungkin dalam mm)
         const div100 = value / 100;
-        
+
         // Pilih yang paling masuk akal berdasarkan sensor type
         if (sensorType === 'back') {
           // Back ideal: 5-15 cm
@@ -796,28 +802,28 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (div10 >= 15 && div10 <= 40) return div10;
           if (div100 >= 15 && div100 <= 40) return div100;
         }
-        
+
         // Jika masih tidak masuk akal, return null (akan dianggap invalid)
         console.warn(`[Ultrasonic] Nilai ${value} cm terlalu besar untuk sensor ${sensorType}, kemungkinan error sensor`);
         return null;
       }
-      
+
       return value;
     };
-    
+
     // Normalisasi nilai sebelum ditampilkan
     const normalizedBack = normalizeValue(backCm, 'back');
     const normalizedNeck = normalizeValue(neckCm, 'neck');
-    
+
     const formatVal = (v) => {
       if (!Number.isFinite(v) || v <= 0) return '—';
       // Tampilkan dengan 1 desimal
       return v.toFixed(1);
     };
-    
+
     if (backValEl) backValEl.textContent = formatVal(normalizedBack || backCm);
     if (neckValEl) neckValEl.textContent = formatVal(normalizedNeck || neckCm);
-    
+
     const applyStatus = (el, value, kind) => {
       if (!el) return;
       // Reset classes
@@ -829,12 +835,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         el.prepend(dot);
       }
       dot.className = 'h-2 w-2 rounded-full bg-slate-400';
-      
+
       // REKOMENDASI BARU berdasarkan ergonomi
       // Back ideal: 5-15 cm (punggung menempel sandaran); caution: 3-5 atau 15-25; danger: <3 atau >25
       // Neck ideal: 20-30 cm (kepala netral); caution: 15-20 atau 30-40; danger: <15 atau >40
       // Max Range sensor: 50 cm - nilai di atas ini dianggap error/invalid
-      
+
       let label = '—';
       if (!Number.isFinite(value) || value <= 0 || value > 50) {
         if (value > 50) {
@@ -850,10 +856,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         el.append(' ', label);
         return;
       }
-      
+
       // Batas untuk sensor Punggung
       let idealMin, idealMax, cautionLowMin, cautionLowMax, cautionHighMin, cautionHighMax, dangerLowMax, dangerHighMin;
-      
+
       if (kind === 'back') {
         idealMin = 5;
         idealMax = 15;
@@ -874,7 +880,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         dangerLowMax = 15;
         dangerHighMin = 40;
       }
-      
+
       if (value >= idealMin && value <= idealMax) {
         label = 'Aman';
         dot.className = 'h-2 w-2 rounded-full bg-emerald-400';
@@ -893,13 +899,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         dot.className = 'h-2 w-2 rounded-full bg-amber-300';
         el.className += ' text-amber-300';
       }
-      
+
       // Set label text while keeping the dot
       el.innerHTML = '';
       el.appendChild(dot);
       el.append(' ', label);
     };
-    
+
     // Gunakan nilai yang sudah dinormalisasi untuk status
     applyStatus(backStatusEl, normalizedBack || backCm, 'back');
     applyStatus(neckStatusEl, normalizedNeck || neckCm, 'neck');
@@ -916,12 +922,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function calculatePostureScore(backDist, neckDist, fsrVal) {
     let scores = { back: 0, neck: 0, pressure: 0, total: 0 };
-    
+
     // Validasi input
     const backValid = backDist > 0 && backDist !== -1 && isFinite(backDist);
     const neckValid = neckDist > 0 && neckDist !== -1 && isFinite(neckDist);
     const fsrValid = fsrVal > 0 && isFinite(fsrVal);
-    
+
     // Hitung back score (range ideal disesuaikan: 20-35 cm berdasarkan data aktual)
     if (backValid) {
       if (backDist >= 20 && backDist <= 35) {
@@ -938,7 +944,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         scores.back = Math.max(0, 25 - ((backDist - 50) * 0.5)); // Sangat jauh
       }
     }
-    
+
     // Hitung neck score (range ideal disesuaikan: 25-35 cm berdasarkan data aktual)
     if (neckValid) {
       if (neckDist >= 25 && neckDist <= 35) {
@@ -955,7 +961,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         scores.neck = Math.max(0, 25 - ((neckDist - 50) * 0.5)); // Sangat jauh
       }
     }
-    
+
     // Hitung pressure score (range ideal: 200-800)
     // Jika FSR 0, beri score berdasarkan konsistensi data ultrasonic
     if (fsrValid) {
@@ -970,7 +976,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Fallback: Jika FSR 0 tapi ada data ultrasonic yang konsisten, beri score minimal
       scores.pressure = 30; // Score minimal untuk menunjukkan sistem aktif
     }
-    
+
     // Hitung total score
     // Jika FSR tidak valid, ubah weight: back 40%, neck 60%
     if (backValid || neckValid || fsrValid) {
@@ -981,7 +987,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         scores.total = Math.round((scores.back * 0.40) + (scores.neck * 0.60));
       }
     }
-    
+
     return scores;
   }
 
@@ -1003,14 +1009,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Simpan nilai mentah untuk ditampilkan apa adanya di dashboard
     const rawBackForDisplay = v?.ultrasonic?.punggung_cm !== undefined ? Number(v.ultrasonic.punggung_cm) : null;
     const rawNeckForDisplay = v?.ultrasonic?.leher_cm !== undefined ? Number(v.ultrasonic.leher_cm) : null;
-    
+
     // KONVERSI: Jika nilai terlalu besar (> 100cm), mungkin dalam satuan yang berbeda
     // Coba konversi dari milimeter atau nilai raw sensor
     if (uBack !== null && uBack > 100) {
       // Jika nilai > 100, coba bagi dengan 10 (mungkin dalam 0.1mm) atau 100 (mungkin dalam mm)
       const backMM = uBack / 10;
       const backCM = uBack / 100;
-      
+
       // Pilih yang paling masuk akal (antara 5-15cm untuk back)
       if (backMM >= 5 && backMM <= 50) {
         uBack = backMM;
@@ -1021,12 +1027,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       // Jika masih tidak masuk akal, gunakan nilai asli (akan di-handle oleh calculatePostureScore)
     }
-    
+
     if (uNeck !== null && uNeck > 100) {
       // Jika nilai > 100, coba bagi dengan 10 atau 100
       const neckMM = uNeck / 10;
       const neckCM = uNeck / 100;
-      
+
       // Pilih yang paling masuk akal (antara 30-45cm untuk neck)
       if (neckMM >= 20 && neckMM <= 100) {
         uNeck = neckMM;
@@ -1036,11 +1042,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[SitSense] Converted neck from', v.ultrasonic.leher_cm, 'to', uNeck, 'cm (divided by 100)');
       }
     }
-    
+
     // Cek apakah data valid (bukan -1 atau null)
     const backValid = uBack !== null && uBack !== -1 && isFinite(uBack) && uBack > 0;
     const neckValid = uNeck !== null && uNeck !== -1 && isFinite(uNeck) && uNeck > 0;
-    
+
     // Log data yang diterima (reduced logging)
     if (!window._lastLogTime || Date.now() - window._lastLogTime > 2000) {
       console.log('[SitSense] Data received - FSR:', fsr, 'Back:', uBack, 'cm', 'Neck:', uNeck, 'cm');
@@ -1056,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const backDist = backValid ? uBack : 0;
     const neckDist = neckValid ? uNeck : 0;
     const scores = calculatePostureScore(backDist, neckDist, fsr);
-    
+
     // Update session data (selalu update untuk tracking)
     sessionData.scores.push(scores.total);
     if (scores.total < 60) sessionData.badCount++;
@@ -1070,17 +1076,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateRecommendations(scores);
       // Tampilkan nilai apa adanya untuk section Jarak Ultrasonik (tanpa konversi)
       updateUltrasonicUI(
-        Number.isFinite(rawBackForDisplay) ? rawBackForDisplay : NaN, 
+        Number.isFinite(rawBackForDisplay) ? rawBackForDisplay : NaN,
         Number.isFinite(rawNeckForDisplay) ? rawNeckForDisplay : NaN
       );
-      
+
       // Hitung FSR percentage untuk heatmap dan balance
       const fsrPct = Math.round(clamp(fsr / 4095 * 100, 0, 100));
-      
+
       // Update balance UI dengan data FSR, back, dan neck
       // Simpan data untuk update ulang setelah panel-parameters dimuat
       lastBalanceData = { fsrPct, backDist: uBack, neckDist: uNeck };
-      
+
       // Panggil updateBalanceUI - pastikan dipanggil setiap kali data baru
       if (typeof updateBalanceUI === 'function') {
         updateBalanceUI(fsrPct, uBack, uNeck);
@@ -1089,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         console.warn('[SitSense] updateBalanceUI function not available');
       }
-      
+
       // Update heatmap dengan matrix dari FSR (dengan fallback ultrasonic jika FSR 0)
       try {
         const heatmapMatrix = synthMatrixFromFSR(fsrPct, 8, 8, uBack, uNeck);
@@ -1098,8 +1104,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           // Log hanya setiap beberapa detik untuk mengurangi spam
           if (!window._lastHeatmapLog || Date.now() - window._lastHeatmapLog > 3000) {
             const source = fsrPct > 0 ? 'FSR' : 'Ultrasonic (fallback)';
-            console.log('[SitSense] Heatmap updated - Source:', source, 'FSR:', fsrPct + '%', 
-                        'Back:', uBack?.toFixed(2), 'cm', 'Neck:', uNeck?.toFixed(2), 'cm');
+            console.log('[SitSense] Heatmap updated - Source:', source, 'FSR:', fsrPct + '%',
+              'Back:', uBack?.toFixed(2), 'cm', 'Neck:', uNeck?.toFixed(2), 'cm');
             window._lastHeatmapLog = Date.now();
           }
         } else {
@@ -1118,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {
         console.error('[SitSense] Heatmap update error:', e);
       }
-      
+
       // Update charts
       try {
         if (window.SitSenseCharts?.pushPressure) {
@@ -1144,19 +1150,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Cek URL parameter
     const qp = (k) => new URL(location.href).searchParams.get(k);
     const urlId = qp('device');
-    if (urlId) { 
-      localStorage.setItem('sitsense_device', urlId); 
+    if (urlId) {
+      localStorage.setItem('sitsense_device', urlId);
       console.log('[SitSense] Device ID dari URL:', urlId);
-      return urlId; 
+      return urlId;
     }
-    
+
     // Cek localStorage
     const saved = localStorage.getItem('sitsense_device');
     if (saved && saved !== 'auto') {
       console.log('[SitSense] Device ID dari localStorage:', saved);
       return saved;
     }
-    
+
     // Auto-detect dari Firebase (seperti test connection)
     try {
       console.log('[SitSense] Mencari device ID dari Firebase...');
@@ -1179,16 +1185,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function attachForDevice(deviceId) {
     detachAll();
-    
+
     if (!deviceId) {
       setDeviceMeta({ status: 'Device tidak ditemukan' });
       console.warn('[SitSense] Device ID tidak ditemukan');
       return;
     }
-    
+
     console.log('[SitSense] Menyambung ke device:', deviceId);
     setDeviceMeta({ status: `Menyambung ke ${deviceId}...` });
-    
+
     liveRef = db.ref(`/devices/${deviceId}/live`);
     infoRef = db.ref(`/devices/${deviceId}/info`);
 
@@ -1209,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('[SitSense] Device info received:', v);
       setDeviceMeta({ ip: v.ip || '—', fw: v.fw || '—', status: v.status || 'Online' });
     });
-    
+
     // Listener untuk live data (PENTING: seperti test connection - tidak cek exists dulu)
     liveRef.on('value', s => {
       const v = s.val();
@@ -1220,41 +1226,154 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('[SitSense] Live data received untuk device', deviceId, ':', v);
       handleLivePacket(v);
     });
-    
+
     console.log('[SitSense] Listeners terpasang untuk device:', deviceId);
   }
 
-  // --- GO! --- (seperti test connection)
-  console.log('[SitSense] Starting Firebase connection...');
-  console.log('[SitSense] Auth available:', !!auth);
-  console.log('[SitSense] DB available:', !!db);
-  
-  if (!auth || !db) {
-    console.error('[SitSense] Auth atau DB tidak tersedia!');
-    setStatusAuth('Gagal');
-    setStatusWifi('Firebase Gagal', false);
-    return;
+  // =================================================================
+  // MQTT CONNECTION HANDLER
+  // =================================================================
+  async function connectViaMQTT() {
+    if (!window.SitSenseMQTT) {
+      console.warn('[SitSense] MQTT module not loaded');
+      return false;
+    }
+
+    try {
+      console.log('[SitSense] Attempting MQTT connection...');
+      setStatusWifi('Connecting MQTT...', false);
+
+      await window.SitSenseMQTT.connect();
+
+      // Setup data handler
+      window.SitSenseMQTT.onData((data) => {
+        console.log('[SitSense-MQTT] Data received:', data.deviceId);
+
+        // Transform to match handleLivePacket format
+        const transformed = {
+          fsr: data.fsr || 0,
+          ultrasonic: data.ultrasonic || {
+            punggung_cm: null,
+            leher_cm: null
+          }
+        };
+
+        handleLivePacket(transformed);
+
+        // Update device meta
+        if (!currentDataSource) {
+          currentDataSource = 'mqtt';
+          setDeviceMeta({
+            status: 'Online (MQTT)',
+            ip: 'via MQTT Broker'
+          });
+        }
+      });
+
+      // Setup status handler
+      window.SitSenseMQTT.onStatus((status) => {
+        const deviceId = status.deviceId;
+        if (status.isHeartbeat) {
+          setDeviceMeta({
+            ip: status.ip || '—',
+            status: 'Online (MQTT)',
+            fw: `Uptime: ${Math.floor(status.uptime / 60)}m`
+          });
+        } else {
+          setDeviceMeta({
+            status: status.online ? 'Online (MQTT)' : 'Offline'
+          });
+        }
+      });
+
+      // Connection state handler
+      window.SitSenseMQTT.onConnectionChange((connected) => {
+        if (connected) {
+          setStatusWifi('MQTT Tersambung', true);
+          setStatusAuth('Via Socket.IO');
+          currentDataSource = 'mqtt';
+        } else {
+          setStatusWifi('MQTT Terputus', false);
+          // Try Firebase fallback
+          if (DATA_SOURCE === 'auto') {
+            console.log('[SitSense] MQTT disconnected, trying Firebase fallback...');
+            connectViaFirebase();
+          }
+        }
+      });
+
+      console.log('[SitSense] ✅ MQTT connection established');
+      setStatusWifi('MQTT Tersambung', true);
+      setStatusAuth('Via Socket.IO');
+      return true;
+
+    } catch (err) {
+      console.error('[SitSense] MQTT connection failed:', err);
+      return false;
+    }
   }
 
-  auth.signInAnonymously()
-    .then(async () => {
+  // =================================================================
+  // FIREBASE CONNECTION HANDLER (Legacy)
+  // =================================================================
+  async function connectViaFirebase() {
+    if (!auth || !db) {
+      console.warn('[SitSense] Firebase not available');
+      return false;
+    }
+
+    try {
+      console.log('[SitSense] Attempting Firebase connection...');
+      setStatusWifi('Connecting Firebase...', false);
+
+      await auth.signInAnonymously();
       setStatusAuth('Masuk (anonim)');
       console.log('[SitSense] Auth berhasil - User ID:', auth.currentUser?.uid);
-      
+
       const devId = await resolveDeviceId();
       console.log('[SitSense] Device ID resolved:', devId);
-      
+
       if (!devId) {
         console.error('[SitSense] Tidak ada device ID yang ditemukan!');
         setDeviceMeta({ status: 'Device tidak ditemukan' });
-        return;
+        return false;
       }
-      
+
       await attachForDevice(devId);
-    })
-    .catch(err => {
-      console.error('[SitSense] Auth failed:', err);
+      currentDataSource = 'firebase';
+      return true;
+
+    } catch (err) {
+      console.error('[SitSense] Firebase connection failed:', err);
       setStatusAuth('Gagal Auth');
-      setStatusWifi('Gagal', false);
+      setStatusWifi('Firebase Gagal', false);
+      return false;
+    }
+  }
+
+  // =================================================================
+  // --- GO! --- DATA SOURCE SELECTION
+  // =================================================================
+  console.log('[SitSense] Starting with data source mode:', DATA_SOURCE);
+
+  if (DATA_SOURCE === 'mqtt') {
+    // MQTT only
+    connectViaMQTT().then(success => {
+      if (!success) {
+        setDeviceMeta({ status: 'MQTT connection failed' });
+      }
     });
+  } else if (DATA_SOURCE === 'firebase') {
+    // Firebase only (legacy)
+    connectViaFirebase();
+  } else {
+    // Auto mode: try MQTT first, fallback to Firebase
+    console.log('[SitSense] Auto mode: trying MQTT first...');
+    connectViaMQTT().then(success => {
+      if (!success) {
+        console.log('[SitSense] MQTT failed, falling back to Firebase...');
+        connectViaFirebase();
+      }
+    });
+  }
 });

@@ -585,13 +585,13 @@
 
             <div class="hidden lg:flex items-center justify-center gap-1 flex-1 text-sm font-medium">
               <div class="nav-hover-group">
-                <button type="button" class="nav-hover-trigger px-4 py-2 rounded-full text-slate-300 inline-flex items-center gap-2" onclick="document.getElementById('learn')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
+                <button type="button" class="nav-hover-trigger px-4 py-2 rounded-full text-slate-300 inline-flex items-center gap-2" onclick="window.location.href='./learn.html#hero';">
                   <span>Learn</span>
                   <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-slate-400"></i>
                 </button>
                 <div class="nav-hover-panel">
                   <div class="nav-hover-grid">
-                    <a href="#learn" class="nav-hover-item">
+                    <a href="./learn.html#hero" class="nav-hover-item">
                       <span class="nav-hover-icon">
                         <i data-lucide="book-open" class="h-5 w-5 text-cyan-200"></i>
                       </span>
@@ -600,7 +600,7 @@
                         <p>Ikuti rangkaian materi belajar seputar ergonomi dan postur sehat.</p>
                       </span>
                     </a>
-                    <a href="#learn-resources" class="nav-hover-item">
+                    <a href="./learn.html#modules" class="nav-hover-item">
                       <span class="nav-hover-icon" style="background: linear-gradient(135deg, rgba(168,85,247,0.18), rgba(34,211,238,0.18));">
                         <i data-lucide="library" class="h-5 w-5 text-purple-200"></i>
                       </span>
@@ -609,7 +609,7 @@
                         <p>Template poster, panduan duduk, dan toolkit tim siap pakai.</p>
                       </span>
                     </a>
-                    <a href="#learn-guides" class="nav-hover-item">
+                    <a href="./learn.html#insight" class="nav-hover-item">
                       <span class="nav-hover-icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(34,211,238,0.18));">
                         <i data-lucide="sparkles" class="h-5 w-5 text-emerald-200"></i>
                       </span>
@@ -618,7 +618,7 @@
                         <p>Langkah-langkah singkat untuk optimalkan area kerja dan rutinitas.</p>
                       </span>
                     </a>
-                    <a href="#learn-sessions" class="nav-hover-item">
+                    <a href="./learn.html#stories" class="nav-hover-item">
                       <span class="nav-hover-icon" style="background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(139,92,246,0.18));">
                         <i data-lucide="video" class="h-5 w-5 text-sky-200"></i>
                       </span>
@@ -738,7 +738,7 @@
 
             <div class="hidden md:flex items-center gap-3">
               <div data-auth-nav class="flex items-center gap-3 text-sm"></div>
-              <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-6 relative" id="launchAppBtn" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+              <a href="./monitor.html?launched=true" class="btn btn-gradient-primary normal-case px-6 relative" id="launchAppBtn" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
                 <span class="relative z-10" style="pointer-events: none;">Launch App</span>
               </a>
             </div>
@@ -752,7 +752,7 @@
 
           <div id="mobileNavMenu" class="md:hidden px-4 pb-4 space-y-4 hidden">
             <div class="grid grid-cols-2 gap-2 text-sm">
-              <a href="#learn" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-2 hover:border-cyan-400/40 transition-colors">
+              <a href="./learn.html#hero" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-2 hover:border-cyan-400/40 transition-colors">
                 <i data-lucide="book-open" class="h-4 w-4 text-cyan-300"></i>
                 <span>Learn</span>
               </a>
@@ -774,7 +774,7 @@
               </a>
             </div>
 
-            <a href="./index.html?launched=true" class="btn btn-gradient-primary w-full normal-case gap-2" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+            <a href="./monitor.html?launched=true" class="btn btn-gradient-primary w-full normal-case gap-2" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
               <i data-lucide="rocket" class="h-4 w-4"></i>
               <span>Luncurkan Aplikasi</span>
             </a>
@@ -882,7 +882,7 @@
         
         <!-- Enhanced CTA Buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-5 mt-8" data-aos="fade-up" data-aos-delay="600">
-          <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case px-8 py-3 text-base font-semibold relative group" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+          <a href="./monitor.html?launched=true" class="btn btn-gradient-primary normal-case px-8 py-3 text-base font-semibold relative group" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
             <i data-lucide="rocket" class="h-4 w-4 mr-2 relative z-10 group-hover:animate-bounce" style="pointer-events: none;"></i>
             <span class="relative z-10" style="pointer-events: none;">Launch App</span>
           </a>
@@ -1377,7 +1377,7 @@
                     <span class="text-slate-300">Role-based access control</span>
                   </li>
                 </ul>
-                <a href="./index.html?launched=true" class="btn btn-gradient-primary normal-case relative" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
+                <a href="./monitor.html?launched=true" class="btn btn-gradient-primary normal-case relative" onclick="try { sessionStorage.setItem('sitsense-app-launched', 'true'); } catch(e) {}">
                   <span class="relative z-10" style="pointer-events: none;">Mulai dengan Tim</span>
                 </a>
               </div>
@@ -1935,7 +1935,7 @@ const response = await fetch(
             <ul class="space-y-2 text-sm text-slate-400">
               <li><a href="#features" class="hover:text-cyan-300 transition-colors">Features</a></li>
               <li><a href="#solutions" class="hover:text-cyan-300 transition-colors">Solutions</a></li>
-              <li><a href="./index.html" class="hover:text-cyan-300 transition-colors">Dashboard</a></li>
+              <li><a href="./monitor.html" class="hover:text-cyan-300 transition-colors">Dashboard</a></li>
             </ul>
           </div>
           <div>
@@ -2175,7 +2175,7 @@ const response = await fetch(
         var target = e.target;
         // Cari link terdekat
         while (target && target !== document.body) {
-          if (target.tagName === 'A' && target.href && target.href.indexOf('index.html') > -1) {
+          if (target.tagName === 'A' && target.href && (target.href.indexOf('monitor.html') > -1 || target.href.indexOf('index.html') > -1)) {
             try {
               // Set sessionStorage SEBELUM click event
               sessionStorage.setItem('sitsense-app-launched', 'true');
@@ -2191,7 +2191,7 @@ const response = await fetch(
       }, false); // false = bubble phase, bukan capture
       
       // Backup: juga set saat click (jika mousedown tidak bekerja)
-      document.querySelectorAll('a[href*="index.html"]').forEach(function(link) {
+      document.querySelectorAll('a[href*="monitor.html"], a[href*="index.html"]').forEach(function(link) {
         // Pastikan link bisa di-klik
         link.style.pointerEvents = 'auto';
         link.style.cursor = 'pointer';

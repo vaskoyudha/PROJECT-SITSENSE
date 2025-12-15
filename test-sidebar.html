@@ -57,7 +57,7 @@
         <div class="info">
             <h3>Instruksi:</h3>
             <ol>
-                <li>Buka halaman <code>index.html</code> di browser</li>
+                <li>Buka halaman <code>monitor.html</code> di browser</li>
                 <li>Pastikan Anda melihat halaman dalam mode <strong>desktop</strong> (lebar > 768px)</li>
                 <li>Lihat di header sidebar (kiri atas), akan ada tombol toggle</li>
                 <li>Klik tombol tersebut untuk collapse/expand sidebar</li>
@@ -103,7 +103,7 @@
         <div id="result"></div>
 
         <h3>Quick Links:</h3>
-        <a href="index.html" style="color: #3b82f6;">→ Buka index.html</a>
+        <a href="monitor.html" style="color: #3b82f6;">→ Buka monitor.html</a>
     </div>
 
     <script>
@@ -120,7 +120,7 @@
                     try {
                         // Note: This won't work here because sidebar doesn't exist
                         // This is just for testing the function exists
-                        html += '<p class="success">✅ Function dapat dipanggil (test di index.html untuk melihat hasilnya)</p>';
+                        html += '<p class="success">✅ Function dapat dipanggil (test di monitor.html untuk melihat hasilnya)</p>';
                     } catch(e) {
                         html += '<p class="error">❌ Error: ' + e.message + '</p>';
                     }
@@ -129,7 +129,7 @@
                 }
             } else {
                 html += '<p class="error">❌ SidebarManager tidak ditemukan</p>';
-                html += '<p>Pastikan Anda menjalankan test ini di halaman index.html</p>';
+                html += '<p>Pastikan Anda menjalankan test ini di halaman monitor.html</p>';
             }
             
             html += '</div>';
