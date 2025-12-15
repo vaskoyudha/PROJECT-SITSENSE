@@ -1,13 +1,9 @@
 // =================================================================
-// 1. KONFIGURASI DAN INISIALISASI
+// 1. KONFIGURASI DAN INISIALISASI FIREBASE (seperti test connection)
 // =================================================================
-// Data source: 'mqtt' (new), 'firebase' (legacy), or 'auto' (try mqtt first)
-const DATA_SOURCE = window.SITSENSE_DATA_SOURCE ||
-  new URLSearchParams(window.location.search).get('source') || 'auto';
-
-// Firebase sudah diinisialisasi di monitor.html, gunakan yang sudah ada
-const auth = window.firebaseAuth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
-const db = window.firebaseDb || (typeof firebase !== 'undefined' ? firebase.database() : null);
+// Firebase sudah diinisialisasi di index.html, gunakan yang sudah ada
+const auth = window.firebaseAuth || firebase.auth();
+const db = window.firebaseDb || firebase.database();
 
 // Toggle verbose logging via ?debug=1
 const __DEBUG_MODE__ = new URLSearchParams(window.location.search).get('debug') === '1';
@@ -27,8 +23,6 @@ if (!__DEBUG_MODE__) {
 // Variables global untuk referensi
 let liveRef = null;
 let infoRef = null;
-let currentDataSource = null; // track active data source
-
 
 document.addEventListener('DOMContentLoaded', async () => {
   // =================================================================
@@ -368,11 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       neckBackBalance = Math.min(100, Math.max(0, neckBackBalance));
     }
 
-<<<<<<< HEAD
-    // Update semua elemen balance (bisa ada beberapa karena duplikasi di monitor.html dan panel-parameters.html)
-=======
     // Update semua elemen balance (bisa ada beberapa karena duplikasi di index.html dan panel-parameters.html)
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     // Gunakan querySelectorAll untuk menemukan semua elemen dengan ID yang sama
     const updateBalanceElements = () => {
       const lrFillElements = document.querySelectorAll('#balanceLRFill');
@@ -1284,9 +1274,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const qp = (k) => new URL(location.href).searchParams.get(k);
     const urlId = qp('device');
     if (urlId) {
-<<<<<<< HEAD
-      localStorage.setItem('sitsense_device', urlId);
-=======
       if (userId) {
         localStorage.setItem(storageKey, urlId);
         // Juga simpan di Firebase untuk sync across devices
@@ -1298,25 +1285,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         localStorage.setItem('sitsense_device', urlId);
       }
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
       console.log('[SitSense] Device ID dari URL:', urlId);
       return urlId;
     }
 
-<<<<<<< HEAD
-    // Cek localStorage
-    const saved = localStorage.getItem('sitsense_device');
-=======
     // Cek localStorage user-specific
     const saved = localStorage.getItem(storageKey);
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     if (saved && saved !== 'auto') {
       console.log('[SitSense] Device ID dari localStorage:', saved);
       return saved;
     }
 
-<<<<<<< HEAD
-=======
     // Jika user login, cek Firebase preferences
     if (userId) {
       try {
@@ -1332,7 +1311,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     // Auto-detect dari Firebase (seperti test connection)
     try {
       console.log('[SitSense] Mencari device ID dari Firebase...');
@@ -1375,8 +1353,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SitSense] Menyambung ke device:', deviceId);
     setDeviceMeta({ status: `Menyambung ke ${deviceId}...` });
 
-<<<<<<< HEAD
-=======
     // Expose device ID globally for Session Manager
     window.__deviceId = deviceId;
     
@@ -1385,7 +1361,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.SessionManager.init({ deviceId: deviceId });
     }
 
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     liveRef = db.ref(`/devices/${deviceId}/live`);
     infoRef = db.ref(`/devices/${deviceId}/info`);
 
@@ -1421,107 +1396,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SitSense] Listeners terpasang untuk device:', deviceId);
   }
 
-<<<<<<< HEAD
-  // =================================================================
-  // MQTT CONNECTION HANDLER
-  // =================================================================
-  async function connectViaMQTT() {
-    if (!window.SitSenseMQTT) {
-      console.warn('[SitSense] MQTT module not loaded');
-      return false;
-    }
-
-    try {
-      console.log('[SitSense] Attempting MQTT connection...');
-      setStatusWifi('Connecting MQTT...', false);
-
-      await window.SitSenseMQTT.connect();
-
-      // Setup data handler
-      window.SitSenseMQTT.onData((data) => {
-        console.log('[SitSense-MQTT] Data received:', data.deviceId);
-
-        // Transform to match handleLivePacket format
-        const transformed = {
-          fsr: data.fsr || 0,
-          ultrasonic: data.ultrasonic || {
-            punggung_cm: null,
-            leher_cm: null
-          }
-        };
-
-        handleLivePacket(transformed);
-
-        // Update device meta
-        if (!currentDataSource) {
-          currentDataSource = 'mqtt';
-          setDeviceMeta({
-            status: 'Online (MQTT)',
-            ip: 'via MQTT Broker'
-          });
-        }
-      });
-
-      // Setup status handler
-      window.SitSenseMQTT.onStatus((status) => {
-        const deviceId = status.deviceId;
-        if (status.isHeartbeat) {
-          setDeviceMeta({
-            ip: status.ip || '—',
-            status: 'Online (MQTT)',
-            fw: `Uptime: ${Math.floor(status.uptime / 60)}m`
-          });
-        } else {
-          setDeviceMeta({
-            status: status.online ? 'Online (MQTT)' : 'Offline'
-          });
-        }
-      });
-
-      // Connection state handler
-      window.SitSenseMQTT.onConnectionChange((connected) => {
-        if (connected) {
-          setStatusWifi('MQTT Tersambung', true);
-          setStatusAuth('Via Socket.IO');
-          currentDataSource = 'mqtt';
-        } else {
-          setStatusWifi('MQTT Terputus', false);
-          // Try Firebase fallback
-          if (DATA_SOURCE === 'auto') {
-            console.log('[SitSense] MQTT disconnected, trying Firebase fallback...');
-            connectViaFirebase();
-          }
-        }
-      });
-
-      console.log('[SitSense] ✅ MQTT connection established');
-      setStatusWifi('MQTT Tersambung', true);
-      setStatusAuth('Via Socket.IO');
-      return true;
-
-    } catch (err) {
-      console.error('[SitSense] MQTT connection failed:', err);
-      return false;
-    }
-  }
-
-  // =================================================================
-  // FIREBASE CONNECTION HANDLER (Legacy)
-  // =================================================================
-  async function connectViaFirebase() {
-    if (!auth || !db) {
-      console.warn('[SitSense] Firebase not available');
-      return false;
-    }
-
-    try {
-      console.log('[SitSense] Attempting Firebase connection...');
-      setStatusWifi('Connecting Firebase...', false);
-
-      await auth.signInAnonymously();
-      setStatusAuth('Masuk (anonim)');
-      console.log('[SitSense] Auth berhasil - User ID:', auth.currentUser?.uid);
-=======
   // --- GO! --- (seperti test connection)
   console.log('[SitSense] Starting Firebase connection...');
   console.log('[SitSense] Auth available:', !!auth);
@@ -1611,7 +1485,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         }
       }
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
 
       const devId = await resolveDeviceId();
       console.log('[SitSense] Device ID resolved:', devId);
@@ -1619,48 +1492,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!devId) {
         console.error('[SitSense] Tidak ada device ID yang ditemukan!');
         setDeviceMeta({ status: 'Device tidak ditemukan' });
-        return false;
+        return;
       }
 
       await attachForDevice(devId);
-<<<<<<< HEAD
-      currentDataSource = 'firebase';
-      return true;
-
-    } catch (err) {
-      console.error('[SitSense] Firebase connection failed:', err);
-      setStatusAuth('Gagal Auth');
-      setStatusWifi('Firebase Gagal', false);
-      return false;
-    }
-  }
-
-  // =================================================================
-  // --- GO! --- DATA SOURCE SELECTION
-  // =================================================================
-  console.log('[SitSense] Starting with data source mode:', DATA_SOURCE);
-
-  if (DATA_SOURCE === 'mqtt') {
-    // MQTT only
-    connectViaMQTT().then(success => {
-      if (!success) {
-        setDeviceMeta({ status: 'MQTT connection failed' });
-      }
-    });
-  } else if (DATA_SOURCE === 'firebase') {
-    // Firebase only (legacy)
-    connectViaFirebase();
-  } else {
-    // Auto mode: try MQTT first, fallback to Firebase
-    console.log('[SitSense] Auto mode: trying MQTT first...');
-    connectViaMQTT().then(success => {
-      if (!success) {
-        console.log('[SitSense] MQTT failed, falling back to Firebase...');
-        connectViaFirebase();
-      }
-    });
-  }
-=======
     } catch (err) {
       console.error('[SitSense] Initialization failed:', err);
       setStatusAuth('Gagal');
@@ -1670,5 +1505,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Start initialization
   initializeApp();
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
 });

@@ -1,64 +1,5 @@
 <!doctype html>
 <html lang="id" data-theme="dark">
-<<<<<<< HEAD
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SitSense — Entry Hub</title>
-
-    <!-- Redirect Script - harus di paling atas -->
-    <script>
-      (function() {
-        try {
-          var pathname = window.location.pathname || '';
-          var search = window.location.search || '';
-          var hash = window.location.hash || '';
-
-          var redirectTo = function(target) {
-            if (!target) return;
-            var url = target + (hash || '');
-            window.location.replace(url);
-          };
-
-          var cleanQuery = function() {
-            if (window.history && window.history.replaceState) {
-              var clean = window.location.origin + pathname + hash;
-              window.history.replaceState({}, document.title, clean);
-            }
-          };
-
-          var hasLaunchParam = false;
-          if (search) {
-            if (search.indexOf('launched=true') !== -1) {
-              hasLaunchParam = true;
-            } else if (window.URLSearchParams) {
-              try {
-                var params = new URLSearchParams(search);
-                hasLaunchParam = params.get('launched') === 'true';
-              } catch (_) {
-                hasLaunchParam = search.indexOf('launched=true') !== -1;
-              }
-            }
-          }
-
-          if (hasLaunchParam) {
-            try {
-              sessionStorage.setItem('sitsense-app-launched', 'true');
-            } catch (err) {
-              console.warn('Session storage unavailable', err);
-            }
-            cleanQuery();
-            redirectTo('monitor.html');
-            return;
-          }
-
-          var hasLaunched = false;
-          try {
-            hasLaunched = sessionStorage.getItem('sitsense-app-launched') === 'true';
-          } catch (err) {
-            console.warn('Session storage not accessible', err);
-            hasLaunched = false;
-=======
 
 <head>
   <!-- Redirect Script - HARUS di paling atas untuk memastikan redirect sebelum halaman dimuat -->
@@ -129,101 +70,8 @@
           var lastSegment = segments.length > 0 ? segments[segments.length - 1].toLowerCase() : '';
           if (lastSegment === 'index.html' || lastSegment === '' || pathname.endsWith('/')) {
             isIndexOrRoot = true;
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
           }
-
-          if (hasLaunched) {
-            redirectTo('monitor.html');
-            return;
-          }
-
-          redirectTo('home.html');
-        } catch (err) {
-          console.error('Redirect check error:', err);
-          try {
-            window.location.replace('home.html');
-          } catch (_) {}
         }
-<<<<<<< HEAD
-      })();
-    </script>
-
-    <style>
-      :root {
-        color-scheme: dark;
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background-color: #050b16;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle at 20% 20%, rgba(6,182,212,.15), transparent 50%),
-                    radial-gradient(circle at 80% 10%, rgba(139,92,246,.15), transparent 55%),
-                    #050b16;
-        color: #e2e8f0;
-      }
-      .shell {
-        text-align: center;
-        padding: 2.5rem 3rem;
-        border-radius: 1.5rem;
-        border: 1px solid rgba(255,255,255,.08);
-        background: rgba(5,11,22,.75);
-        box-shadow: 0 25px 60px rgba(3,6,15,.6);
-        max-width: 560px;
-      }
-      .title {
-        margin-bottom: 0.75rem;
-        font-size: 1.5rem;
-        font-weight: 600;
-      }
-      .desc {
-        margin-bottom: 1.75rem;
-        color: rgba(226,232,240,.8);
-      }
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        justify-content: center;
-      }
-      a.btn {
-        text-decoration: none;
-        padding: 0.8rem 1.5rem;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,.12);
-        color: inherit;
-        transition: background .2s ease, border-color .2s ease;
-      }
-      a.btn.primary {
-        background: linear-gradient(135deg, #06b6d4, #8b5cf6, #10b981);
-        border-color: transparent;
-        color: #fff;
-      }
-      a.btn:hover {
-        border-color: rgba(255,255,255,.3);
-        background: rgba(255,255,255,.06);
-      }
-      a.btn.primary:hover {
-        filter: brightness(1.05);
-      }
-      .note {
-        margin-top: 1.25rem;
-        font-size: 0.85rem;
-        color: rgba(226,232,240,.65);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="shell">
-      <p class="title">Mengalihkan ke pengalaman terbaik…</p>
-      <p class="desc">Jika tidak otomatis, pilih tujuan di bawah untuk melanjutkan.</p>
-      <div class="actions">
-        <a class="btn primary" href="./monitor.html">Buka Monitor</a>
-        <a class="btn" href="./home.html">Kembali ke Home</a>
-=======
 
         console.log('Is index or root:', isIndexOrRoot);
 
@@ -502,14 +350,8 @@
         </button>
       </div>
       <div class="mt-6 text-xs text-slate-400">© <span class="font-medium text-slate-300">SitSense</span> — Project IoT
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
       </div>
-      <p class="note">Pastikan sudah melewati onboarding agar akses monitor lancar.</p>
     </div>
-<<<<<<< HEAD
-  </body>
-</html>
-=======
   </div>
 
   <!-- ================= SIDEBAR ================= -->
@@ -2035,4 +1877,3 @@
 </body>
 
 </html>
->>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
