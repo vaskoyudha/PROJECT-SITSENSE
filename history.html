@@ -213,10 +213,6 @@
           </div>
         </div>
         <div class="profile-top-actions">
-          <button type="button" onclick="window.SitSenseUI?.toggleTheme?.()" class="status-chip accent">
-            <i data-lucide="sun-moon" class="h-4 w-4"></i>
-            Mode
-          </button>
           <div class="profile-mini-card">
             <div class="profile-mini-card__icon">
               <i data-lucide="list" class="h-5 w-5 text-white"></i>
@@ -431,9 +427,36 @@
     </script>
 
     <!-- Module hooks (aktifkan saat file tersedia) -->
-    <script src="./assets/js/firebase-config.js"></script>
-    <script src="./assets/js/ui.js"></script>
-    <script src="./assets/js/charts.js"></script>
-    <script src="./assets/js/history.js"></script>
+    <!-- Pastikan Firebase SDK dimuat terlebih dahulu (menggunakan defer) -->
+    <!-- Script ini akan menunggu Firebase SDK siap sebelum memuat config -->
+    <script>
+      // Wait for Firebase SDK to be loaded (karena menggunakan defer)
+      (function waitForFirebase() {
+        if (typeof firebase === 'undefined' || !firebase.apps) {
+          setTimeout(waitForFirebase, 50);
+          return;
+        }
+        // Firebase sudah dimuat, load config dan dependencies
+        const script = document.createElement('script');
+        script.src = './assets/js/firebase-config.js';
+        script.onload = function() {
+          // Load dependencies setelah firebase-config
+          const deps = [
+            './assets/js/user-context.js',
+            './assets/js/auth.js',
+            './assets/js/ui.js',
+            './assets/js/charts.js',
+            './assets/js/history-service.js',
+            './assets/js/history.js'
+          ];
+          deps.forEach(src => {
+            const s = document.createElement('script');
+            s.src = src;
+            document.body.appendChild(s);
+          });
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>

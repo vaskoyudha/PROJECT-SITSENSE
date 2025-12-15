@@ -274,7 +274,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // =================================================================
   // 3. STATE MANAGEMENT
   // =================================================================
-  let timerStart = null, timerInterval = null;
+  // Catatan:
+  // - Durasi sesi AKTIF sekarang bersumber dari SessionManager (STATE.startTime).
+  // - Di sini kita hanya menyimpan statistik agregat ringan & cache lokal.
+  let timerInterval = null;
   let sessionData = { scores: [], startTime: Date.now(), goodCount: 0, badCount: 0, sessions: [] };
 
   // =================================================================
@@ -365,7 +368,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       neckBackBalance = Math.min(100, Math.max(0, neckBackBalance));
     }
 
+<<<<<<< HEAD
     // Update semua elemen balance (bisa ada beberapa karena duplikasi di monitor.html dan panel-parameters.html)
+=======
+    // Update semua elemen balance (bisa ada beberapa karena duplikasi di index.html dan panel-parameters.html)
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     // Gunakan querySelectorAll untuk menemukan semua elemen dengan ID yang sama
     const updateBalanceElements = () => {
       const lrFillElements = document.querySelectorAll('#balanceLRFill');
@@ -689,6 +696,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Hitung total durasi duduk HARI INI (agregat dari semua sesi yang tersimpan di history
+  // + sesi aktif yang belum selesai).
+  function getTodayDurationSec() {
+    let totalSec = 0;
+    const now = Date.now();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfDay = today.getTime();
+
+    // Tambahkan semua sesi yang sudah tersimpan di local history untuk hari ini
+    try {
+      if (window.SitSenseHistory && typeof window.SitSenseHistory.getAll === 'function') {
+        const all = window.SitSenseHistory.getAll() || [];
+        for (const s of all) {
+          if (!s || !Number.isFinite(s.startTs)) continue;
+          if (s.startTs < startOfDay || s.startTs > now) continue;
+          const dur = Number.isFinite(s.durationSec)
+            ? s.durationSec
+            : Math.max(0, Math.floor(((s.endTs || s.startTs) - s.startTs) / 1000));
+          totalSec += dur;
+        }
+      }
+    } catch (err) {
+      console.warn('[SitSense] Failed to aggregate today duration from history', err);
+    }
+
+    // Tambahkan durasi sesi aktif yang sedang berjalan (belum masuk history)
+    try {
+      if (window.SessionManager &&
+          typeof window.SessionManager.isActive === 'function' &&
+          typeof window.SessionManager.getElapsedSeconds === 'function' &&
+          window.SessionManager.isActive()) {
+        totalSec += window.SessionManager.getElapsedSeconds();
+      }
+    } catch (_) {}
+
+    return totalSec;
+  }
+
   function updateDailyStats() {
     if (sessionData.scores.length === 0) {
       setText(avgScoreEl, '—');
@@ -702,9 +748,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     setText(avgScoreEl, Math.round(avg));
     setText(goodPostureCountEl, sessionData.goodCount);
     setText(badPostureCountEl, sessionData.badCount);
-    if (timerStart) {
-      const elapsed = (Date.now() - timerStart) / 1000;
-      const hours = Math.floor(elapsed / 3600), minutes = Math.floor((elapsed % 3600) / 60);
+
+    // Total Durasi Hari Ini: agregat dari semua sesi hari ini (history + sesi aktif).
+    const totalTodaySec = getTodayDurationSec();
+    if (totalTodaySec > 0) {
+      const hours = Math.floor(totalTodaySec / 3600);
+      const minutes = Math.floor((totalTodaySec % 3600) / 60);
       setText(totalTimeEl, hours > 0 ? `${hours}j ${minutes}m` : `${minutes}m`);
     } else {
       setText(totalTimeEl, '—');
@@ -714,19 +763,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateHeroStats() {
-    // Update hero total duration
+    // Update hero total duration (total durasi hari ini, bukan hanya sesi aktif).
     const heroTotalDurationEl = document.getElementById('heroTotalDuration');
-    if (heroTotalDurationEl && timerStart) {
-      const elapsed = (Date.now() - timerStart) / 1000;
-      const hours = Math.floor(elapsed / 3600);
-      const minutes = Math.floor((elapsed % 3600) / 60);
-      if (hours > 0) {
-        heroTotalDurationEl.textContent = `${hours}:${String(minutes).padStart(2, '0')}`;
+    if (heroTotalDurationEl) {
+      const totalTodaySec = getTodayDurationSec();
+      if (totalTodaySec > 0) {
+        const hours = Math.floor(totalTodaySec / 3600);
+        const minutes = Math.floor((totalTodaySec % 3600) / 60);
+        if (hours > 0) {
+          heroTotalDurationEl.textContent = `${hours}:${String(minutes).padStart(2, '0')}`;
+        } else {
+          heroTotalDurationEl.textContent = `${minutes}:${String(totalTodaySec % 60).padStart(2, '0')}`;
+        }
       } else {
-        heroTotalDurationEl.textContent = `${minutes}:${String(Math.floor(elapsed % 60)).padStart(2, '0')}`;
+        heroTotalDurationEl.textContent = '00:00';
       }
-    } else if (heroTotalDurationEl) {
-      heroTotalDurationEl.textContent = '00:00';
     }
 
     // Update hero average score
@@ -760,6 +811,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   setTimeout(() => {
     updateHeroStats();
   }, 500);
+
+  function renderInlineHistory() {
+    if (!historyListEl) return;
+    const sessions = (window.SitSenseHistory && window.SitSenseHistory.getRecent)
+      ? window.SitSenseHistory.getRecent(4)
+      : [];
+    if (!sessions.length) {
+      historyListEl.innerHTML = `<p class="text-sm text-slate-400">Belum ada riwayat sesi lokal. Mulai monitoring untuk melihat ringkasan cepat di sini.</p>`;
+      return;
+    }
+    const fmtDateTime = (ts) => {
+      const d = new Date(ts);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = d.toLocaleString('id-ID', { month: 'short' });
+      const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      return `${day} ${month} • ${time}`;
+    };
+    historyListEl.innerHTML = sessions.map((s) => {
+      const statusClass = s.avgScore >= 80 ? 'text-emerald-300' : s.avgScore >= 60 ? 'text-amber-300' : 'text-rose-300';
+      const durationMinutes = Math.max(1, Math.round((s.durationSec || 0) / 60));
+      return `
+        <div class="glassy-card card-border p-3 flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs text-slate-400">${fmtDateTime(s.startTs || Date.now())}</p>
+            <p class="text-sm font-semibold">${durationMinutes} menit · <span class="${statusClass}">Skor ${s.avgScore || 0}</span></p>
+            <p class="text-[11px] text-slate-500">Alert ${s.alerts || 0} · Trend ${s.trend || 'stabil'}</p>
+          </div>
+          <div class="text-right">
+            <span class="badge badge-outline border-white/20 text-xs">${s.goodCount || 0} baik</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (window.SitSenseHistory) {
+    window.addEventListener('sitsense:history:new-session', renderInlineHistory);
+    window.addEventListener('sitsense:history:session-start', renderInlineHistory);
+  }
+  setTimeout(renderInlineHistory, 600);
 
   function updateRecommendations(scores) {
     let recs = [];
@@ -991,11 +1082,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     return scores;
   }
 
+  // Sinkronkan kartu \"Durasi Duduk\" dengan SessionManager:
+  // - Jika sesi aktif, baca detik dari SessionManager.getElapsedSeconds().
+  // - Jika tidak ada sesi, tampilkan 00:00:00.
   function startTimer() {
     if (timerInterval) return;
-    if (!timerStart) timerStart = Date.now();
     timerInterval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+      let elapsed = 0;
+      try {
+        if (window.SessionManager &&
+            typeof window.SessionManager.isActive === 'function' &&
+            typeof window.SessionManager.getElapsedSeconds === 'function' &&
+            window.SessionManager.isActive()) {
+          const raw = window.SessionManager.getElapsedSeconds();
+          const scale = (window.SitSenseTime && typeof window.SitSenseTime.getScale === 'function')
+            ? (window.SitSenseTime.getScale() || 1)
+            : 1;
+          // Tampilkan \"menit logis\" sesuai time scale (untuk keperluan testing admin).
+          elapsed = Math.floor(raw * scale);
+        }
+      } catch (_) {}
+
       setText(sitDurationEl, fmtDur(elapsed));
       updateDailyStats();
     }, 1000);
@@ -1067,6 +1174,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     sessionData.scores.push(scores.total);
     if (scores.total < 60) sessionData.badCount++;
     if (scores.total >= 80) sessionData.goodCount++;
+
+    // Record tick untuk Session Manager (jika aktif)
+    if (window.SessionManager && window.SessionManager.isActive()) {
+      try {
+        // Hitung imbalance dari FSR atau sensor data
+        const fsrPct = Math.round(clamp(fsr / 4095 * 100, 0, 100));
+        const imbalance = {
+          lr: 0, // TODO: Calculate from FSR matrix if available
+          fb: 0  // TODO: Calculate from ultrasonic difference if available
+        };
+        
+        window.SessionManager.recordTick({
+          score: scores.total,
+          back: backValid ? uBack : null,
+          neck: neckValid ? uNeck : null,
+          pressure: fsrPct,
+          imbalance: imbalance
+        });
+      } catch (e) {
+        console.warn('[SitSense] Failed to record session tick:', e);
+      }
+    }
 
     // Panggil SEMUA fungsi update (selalu update, bahkan jika score 0)
     try {
@@ -1147,22 +1276,63 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function resolveDeviceId() {
+    // Dapatkan user UID untuk user-specific storage
+    const userId = window.UserContext?.getCurrentUserId();
+    const storageKey = userId ? `sitsense_device_${userId}` : 'sitsense_device';
+
     // Cek URL parameter
     const qp = (k) => new URL(location.href).searchParams.get(k);
     const urlId = qp('device');
     if (urlId) {
+<<<<<<< HEAD
       localStorage.setItem('sitsense_device', urlId);
+=======
+      if (userId) {
+        localStorage.setItem(storageKey, urlId);
+        // Juga simpan di Firebase untuk sync across devices
+        try {
+          await db.ref(`/users/${userId}/preferences/deviceId`).set(urlId);
+        } catch (err) {
+          console.warn('[SitSense] Failed to save device ID to Firebase:', err);
+        }
+      } else {
+        localStorage.setItem('sitsense_device', urlId);
+      }
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
       console.log('[SitSense] Device ID dari URL:', urlId);
       return urlId;
     }
 
+<<<<<<< HEAD
     // Cek localStorage
     const saved = localStorage.getItem('sitsense_device');
+=======
+    // Cek localStorage user-specific
+    const saved = localStorage.getItem(storageKey);
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     if (saved && saved !== 'auto') {
       console.log('[SitSense] Device ID dari localStorage:', saved);
       return saved;
     }
 
+<<<<<<< HEAD
+=======
+    // Jika user login, cek Firebase preferences
+    if (userId) {
+      try {
+        const snap = await db.ref(`/users/${userId}/preferences/deviceId`).once('value');
+        if (snap.exists()) {
+          const deviceId = snap.val();
+          localStorage.setItem(storageKey, deviceId);
+          console.log('[SitSense] Device ID dari Firebase preferences:', deviceId);
+          return deviceId;
+        }
+      } catch (err) {
+        console.warn('[SitSense] Failed to read device ID from Firebase:', err);
+      }
+    }
+
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     // Auto-detect dari Firebase (seperti test connection)
     try {
       console.log('[SitSense] Mencari device ID dari Firebase...');
@@ -1170,7 +1340,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (snap.exists()) {
         const firstKey = Object.keys(snap.val())[0];
         if (firstKey) {
-          localStorage.setItem('sitsense_device', firstKey);
+          if (userId) {
+            localStorage.setItem(storageKey, firstKey);
+            // Simpan ke Firebase preferences
+            try {
+              await db.ref(`/users/${userId}/preferences/deviceId`).set(firstKey);
+            } catch (err) {
+              console.warn('[SitSense] Failed to save device ID to Firebase:', err);
+            }
+          } else {
+            localStorage.setItem('sitsense_device', firstKey);
+          }
           console.log('[SitSense] Device ID auto-detected:', firstKey);
           return firstKey;
         }
@@ -1195,6 +1375,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SitSense] Menyambung ke device:', deviceId);
     setDeviceMeta({ status: `Menyambung ke ${deviceId}...` });
 
+<<<<<<< HEAD
+=======
+    // Expose device ID globally for Session Manager
+    window.__deviceId = deviceId;
+    
+    // Update Session Manager with device ID
+    if (window.SessionManager) {
+      window.SessionManager.init({ deviceId: deviceId });
+    }
+
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
     liveRef = db.ref(`/devices/${deviceId}/live`);
     infoRef = db.ref(`/devices/${deviceId}/info`);
 
@@ -1230,6 +1421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SitSense] Listeners terpasang untuk device:', deviceId);
   }
 
+<<<<<<< HEAD
   // =================================================================
   // MQTT CONNECTION HANDLER
   // =================================================================
@@ -1329,6 +1521,97 @@ document.addEventListener('DOMContentLoaded', async () => {
       await auth.signInAnonymously();
       setStatusAuth('Masuk (anonim)');
       console.log('[SitSense] Auth berhasil - User ID:', auth.currentUser?.uid);
+=======
+  // --- GO! --- (seperti test connection)
+  console.log('[SitSense] Starting Firebase connection...');
+  console.log('[SitSense] Auth available:', !!auth);
+  console.log('[SitSense] DB available:', !!db);
+
+  if (!auth || !db) {
+    console.error('[SitSense] Auth atau DB tidak tersedia!');
+    setStatusAuth('Gagal');
+    setStatusWifi('Firebase Gagal', false);
+    return;
+  }
+
+  // Expose injector for mock/testing purposes
+  try {
+    window.__injectPacket = handleLivePacket;
+  } catch (_) { }
+
+  // Initialize dengan authenticated user check
+  async function initializeApp() {
+    try {
+      // Wait for auth state jika UserContext tersedia
+      let userId = null;
+      if (window.UserContext) {
+        userId = await window.UserContext.waitForAuth(3000);
+      }
+
+      // Check authenticated user - gunakan Firebase auth langsung untuk mendapatkan UID
+      if (auth.currentUser && auth.currentUser.uid) {
+        // User sudah login (bisa authenticated atau anonymous)
+        userId = auth.currentUser.uid;
+        const isAnonymous = auth.currentUser.isAnonymous;
+        setStatusAuth(isAnonymous ? 'Masuk (anonim)' : 'Masuk');
+        console.log('[SitSense] User authenticated - User ID:', userId, isAnonymous ? '(anonymous)' : '');
+      } else {
+        // User tidak login - cek apakah ada session di SitSenseAuth
+        if (window.SitSenseAuth && typeof window.SitSenseAuth.isLoggedIn === 'function') {
+          if (window.SitSenseAuth.isLoggedIn()) {
+            // Ada session tapi Firebase auth belum sync - wait for auth state
+            console.log('[SitSense] Waiting for Firebase auth state...');
+            // Auth state akan di-handle oleh auth.js listener, jadi kita bisa gunakan anonymous sebagai fallback
+            // atau wait sedikit
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if (auth.currentUser && auth.currentUser.uid) {
+              userId = auth.currentUser.uid;
+              setStatusAuth('Masuk');
+              console.log('[SitSense] User authenticated after wait - User ID:', userId);
+            } else {
+              // Gunakan anonymous sebagai fallback
+              console.warn('[SitSense] No Firebase auth user, menggunakan anonymous auth sebagai fallback');
+              try {
+                await auth.signInAnonymously();
+                setStatusAuth('Masuk (anonim)');
+                console.log('[SitSense] Anonymous auth berhasil - User ID:', auth.currentUser?.uid);
+              } catch (err) {
+                console.error('[SitSense] Anonymous auth failed:', err);
+                setStatusAuth('Gagal Auth');
+                setStatusWifi('Gagal', false);
+                return;
+              }
+            }
+          } else {
+            // Tidak ada session - gunakan anonymous sebagai fallback
+            console.warn('[SitSense] User tidak login, menggunakan anonymous auth sebagai fallback');
+            try {
+              await auth.signInAnonymously();
+              setStatusAuth('Masuk (anonim)');
+              console.log('[SitSense] Anonymous auth berhasil - User ID:', auth.currentUser?.uid);
+            } catch (err) {
+              console.error('[SitSense] Anonymous auth failed:', err);
+              setStatusAuth('Gagal Auth');
+              setStatusWifi('Gagal', false);
+              return;
+            }
+          }
+        } else {
+          // Gunakan anonymous sebagai fallback
+          console.warn('[SitSense] No authenticated user, menggunakan anonymous auth');
+          try {
+            await auth.signInAnonymously();
+            setStatusAuth('Masuk (anonim)');
+            console.log('[SitSense] Anonymous auth berhasil - User ID:', auth.currentUser?.uid);
+          } catch (err) {
+            console.error('[SitSense] Anonymous auth failed:', err);
+            setStatusAuth('Gagal Auth');
+            setStatusWifi('Gagal', false);
+            return;
+          }
+        }
+      }
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
 
       const devId = await resolveDeviceId();
       console.log('[SitSense] Device ID resolved:', devId);
@@ -1340,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       await attachForDevice(devId);
+<<<<<<< HEAD
       currentDataSource = 'firebase';
       return true;
 
@@ -1376,4 +1660,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+=======
+    } catch (err) {
+      console.error('[SitSense] Initialization failed:', err);
+      setStatusAuth('Gagal');
+      setStatusWifi('Gagal', false);
+    }
+  }
+
+  // Start initialization
+  initializeApp();
+>>>>>>> e00dd661edc682112d9cb2d82fa47bc4229e8e65
 });

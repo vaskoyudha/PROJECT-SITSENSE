@@ -4,18 +4,30 @@
   Mengambil data riwayat dari Firebase (atau DEMO), melakukan agregasi per jam/hari/minggu,
   menampilkan KPI, grafik, tabel sesi, pagination, dan export CSV.
 
-  Asumsi struktur RTDB:
-    /history/sessions/{id} : {
+  Asumsi struktur RTDB (user-specific):
+    /users/{userId}/sessions/{id} : {
+      userId: string,          // User UID untuk validasi
+      sessionId: string,       // Session ID
+      deviceId: string,        // Device ID
       startTs: number (ms),
       endTs: number (ms),
+      duration: number,        // Durasi dalam detik
       avgPressure?: number,    // 0..100
       avgScore?: number,       // 0..100
-      goodCount?: number,      // menit/detik kategori "Baik"
-      badCount?: number,       // menit/detik kategori "Buruk"
+      goodCount?: number,      // jumlah sample kategori "Baik"
+      badCount?: number,       // jumlah sample kategori "Buruk"
       alerts?: number,         // jumlah peringatan dalam sesi
-      note?: string
+      note?: string,           // Trend atau catatan
+      scores?: {              // Detail scores
+        avgTotal: number,
+        samples: number
+      },
+      alertsLog?: array        // Array of alert objects
     }
-  Catatan: Jika field tertentu tidak ada, script akan mencoba menghitung dari yang tersedia atau memberi default.
+  Catatan: 
+    - Setiap user hanya bisa mengakses data mereka sendiri di /users/{userId}/sessions/
+    - Jika field tertentu tidak ada, script akan mencoba menghitung dari yang tersedia atau memberi default.
+    - Path lama /history/sessions/ masih didukung untuk backward compatibility tapi tidak digunakan lagi.
 */
 (function(){
   'use strict';
@@ -70,6 +82,22 @@
   };
 
   // ---------------- Fetch data ----------------
+  // Helper function untuk menunggu Firebase siap
+  async function waitForFirebase(timeout = 5000) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      const hasFirebase = typeof firebase !== 'undefined' && firebase && firebase.database;
+      const hasWindowFirebase = window.firebase && window.firebase.database;
+      const hasFirebaseDb = window.firebaseDb;
+      
+      if (hasFirebase || hasWindowFirebase || hasFirebaseDb || window.__SITSENSE_FIREBASE_READY__) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return false;
+  }
+
   async function fetchSessions(range){
     // range: { from: ms, to: ms }
     if (!range || !Number.isFinite(range.from) || !Number.isFinite(range.to)) {
@@ -77,44 +105,124 @@
       return [];
     }
 
-    // Check for demo mode
-    const isDemo = /[?&]demo=1\b/.test(location.search) || 
-                   !window.firebase || 
-                   !window.firebase.database ||
-                   !window.__SITSENSE_FIREBASE_READY__;
+    // Check for demo mode - hanya jika benar-benar tidak ada Firebase
+    const hasDemoParam = /[?&]demo=1\b/.test(location.search);
     
-    if (isDemo) {
-      console.info('[SitSense] Running in DEMO mode');
-      return demoSessions(range);
+    if (hasDemoParam) {
+      console.info('[SitSense] Running in DEMO mode (demo=1 parameter)');
+      return [];
     }
+    
+    // Tunggu Firebase siap (maksimal 5 detik)
+    const firebaseReady = await waitForFirebase(5000);
+    
+    if (!firebaseReady) {
+      console.warn('[SitSense] Firebase not ready after timeout, checking status...', {
+        hasFirebase: typeof firebase !== 'undefined' && !!firebase?.database,
+        hasWindowFirebase: !!window.firebase?.database,
+        hasFirebaseDb: !!window.firebaseDb,
+        __SITSENSE_FIREBASE_READY__: !!window.__SITSENSE_FIREBASE_READY__
+      });
+      // Tetap coba query, mungkin Firebase sudah siap tapi flag belum di-set
+    }
+    
+    // Check Firebase availability
+    const hasFirebase = typeof firebase !== 'undefined' && firebase && firebase.database;
+    const hasWindowFirebase = window.firebase && window.firebase.database;
+    const hasFirebaseDb = window.firebaseDb;
+    
+    if (!hasFirebase && !hasWindowFirebase && !hasFirebaseDb) {
+      console.error('[SitSense] Firebase not available after waiting');
+      return [];
+    }
+    
+    // Log Firebase status untuk debugging
+    console.log('[SitSense] Firebase status:', {
+      hasFirebase: !!hasFirebase,
+      hasWindowFirebase: !!hasWindowFirebase,
+      hasFirebaseDb: !!hasFirebaseDb,
+      __SITSENSE_FIREBASE_READY__: !!window.__SITSENSE_FIREBASE_READY__
+    });
 
     try{
-      const db = firebase.database();
+      // Gunakan window.firebaseDb jika tersedia, atau firebase.database()
+      const db = window.firebaseDb || (typeof firebase !== 'undefined' && firebase.database ? firebase.database() : null);
       if (!db) {
-        console.warn('[SitSense] Firebase database not available, using demo data');
-        return demoSessions(range);
+        console.warn('[SitSense] Firebase database not available, returning empty array');
+        return []; // Return empty array, bukan fallback
       }
 
-      const ref = db.ref('/history/sessions');
+      // Dapatkan user UID untuk user-specific path
+      let userId = null;
+      try {
+        if (window.UserContext) {
+          userId = window.UserContext.getCurrentUserId();
+        }
+        if (!userId && window.SitSenseAuth) {
+          const user = window.SitSenseAuth.getCurrentUser();
+          userId = user?.uid;
+        }
+        if (!userId && window.firebaseAuth && window.firebaseAuth.currentUser) {
+          userId = window.firebaseAuth.currentUser.uid;
+        }
+      } catch (err) {
+        console.warn('[SitSense] Failed to get user ID:', err);
+      }
+
+      // Jika tidak ada user ID, return empty array (tidak bisa akses data tanpa user)
+      if (!userId) {
+        console.warn('[SitSense] No user ID, returning empty sessions array');
+        return []; // Return empty array, bukan fallback untuk menghindari data leakage
+      }
+
+      // Gunakan user-specific path
+      const ref = db.ref(`/users/${userId}/sessions`);
       if (!ref) {
-        console.warn('[SitSense] Cannot access /history/sessions, using demo data');
-        return demoSessions(range);
+        console.warn('[SitSense] Cannot access user sessions path, returning empty array');
+        return []; // Return empty array, bukan fallback
       }
 
       // Query dengan range waktu
       const endTime = range.to + 86400000 - 1; // sampai akhir hari
-      const snap = await ref.orderByChild('startTs')
-                            .startAt(range.from)
-                            .endAt(endTime)
-                            .once('value');
+      console.log(`[SitSense] Querying sessions for user ${userId}, range: ${new Date(range.from).toISOString()} to ${new Date(endTime).toISOString()}`);
+      
+      let snap;
+      try {
+        // Coba query dengan orderByChild, jika gagal karena index, gunakan query tanpa order
+        snap = await ref.orderByChild('startTs')
+                        .startAt(range.from)
+                        .endAt(endTime)
+                        .once('value');
+      } catch (orderError) {
+        console.warn('[SitSense] OrderByChild query failed (might need index), trying without order:', orderError);
+        // Fallback: ambil semua data dan filter di client
+        snap = await ref.once('value');
+      }
       
       const val = snap.val() || {};
-      const list = Object.keys(val).map(id => {
+      const allKeys = Object.keys(val);
+      console.log(`[SitSense] Found ${allKeys.length} total sessions in Firebase`);
+      
+      const list = allKeys.map(id => {
         const session = val[id];
+        // Validasi bahwa session ini milik user yang benar
+        if (session.userId && session.userId !== userId) {
+          console.warn('[SitSense] Session userId mismatch, skipping:', id);
+          return null;
+        }
+        
+        const startTs = Number(session.startTs) || 0;
+        const endTs = Number(session.endTs) || 0;
+        
+        // Filter berdasarkan range waktu (jika query tanpa order digunakan)
+        if (startTs < range.from || startTs > endTime) {
+          return null; // Di luar range
+        }
+        
         return { 
           id, 
-          startTs: Number(session.startTs) || 0,
-          endTs: Number(session.endTs) || 0,
+          startTs: startTs,
+          endTs: endTs,
           avgPressure: Number(session.avgPressure) || null,
           avgScore: Number(session.avgScore) || null,
           goodCount: Number(session.goodCount) || 0,
@@ -123,15 +231,29 @@
           note: String(session.note || '')
         };
       })
-      .filter(x => Number.isFinite(x.startTs) && Number.isFinite(x.endTs) && x.startTs > 0 && x.endTs > x.startTs)
+      .filter(x => x !== null && Number.isFinite(x.startTs) && Number.isFinite(x.endTs) && x.startTs > 0 && x.endTs > x.startTs)
       .sort((a,b)=> a.startTs - b.startTs);
       
-      console.info(`[SitSense] Fetched ${list.length} sessions from Firebase`);
+      console.info(`[SitSense] Fetched ${list.length} sessions from Firebase for user ${userId} (after filtering)`);
+      if (list.length > 0) {
+        console.log('[SitSense] Sample session:', {
+          id: list[0].id,
+          startTs: list[0].startTs,
+          startDate: new Date(list[0].startTs).toISOString(),
+          endTs: list[0].endTs,
+          endDate: new Date(list[0].endTs).toISOString()
+        });
+      }
       return list;
     } catch(e){ 
       console.error('[SitSense] history fetch error:', e); 
-      window.SitSenseUI?.showToast?.('Gagal memuat data dari Firebase. Menggunakan data demo.', 'warn');
-      return demoSessions(range); 
+      console.error('[SitSense] Error details:', {
+        message: e.message,
+        code: e.code,
+        stack: e.stack
+      });
+      window.SitSenseUI?.showToast?.('Gagal memuat data dari Firebase. Silakan coba lagi.', 'error');
+      return []; // Return empty array, jangan gunakan fallback demo data
     }
   }
 
@@ -155,6 +277,53 @@
       }
     }
     return out.sort((a,b)=> a.startTs - b.startTs);
+  }
+
+  function localHistorySessions(range) {
+    if (!window.SitSenseHistory || !window.SitSenseHistory.getAll) return [];
+    
+    // Pastikan kita hanya membaca data untuk user yang sedang login
+    try {
+      // Verifikasi bahwa storage key sesuai dengan user yang sedang login
+      const currentUserId = window.UserContext?.getCurrentUserId();
+      if (!currentUserId) {
+        // Jika tidak ada user ID, jangan return data lokal (untuk menghindari data leakage)
+        console.warn('[SitSense] No user ID, skipping local history cache');
+        return [];
+      }
+      
+      const all = window.SitSenseHistory.getAll();
+      if (!Array.isArray(all) || all.length === 0) {
+        return [];
+      }
+      
+      return all
+        .filter((s) => {
+          if (!s || !s.startTs) return false;
+          return s.startTs >= range.from && s.startTs <= range.to + 86400000;
+        })
+        .map((s) => ({
+          id: s.id || `local_${s.startTs}`,
+          startTs: s.startTs,
+          endTs: s.endTs,
+          avgPressure: null,
+          avgScore: s.avgScore || 0,
+          goodCount: s.goodCount || 0,
+          badCount: s.badCount || 0,
+          alerts: s.alerts || 0,
+          note: s.trend ? `Trend ${s.trend}` : ''
+        }));
+    } catch (err) {
+      console.warn('[SitSense] Failed to read local history cache', err);
+      return [];
+    }
+  }
+
+  function fallbackSessions(range) {
+    // Hanya gunakan local history, jangan fallback ke demo untuk menghindari confusion
+    // Return empty array jika tidak ada data lokal
+    const local = localHistorySessions(range);
+    return local; // Jangan return demoSessions(range) untuk menghindari data yang membingungkan
   }
 
   // ---------------- Aggregation ----------------
@@ -542,6 +711,15 @@
       const from = new Date(fromDate + 'T00:00:00').getTime();
       const to = new Date(toDate + 'T23:59:59').getTime();
       
+      console.log('[SitSense] applyFilters - Date range:', {
+        fromDate,
+        toDate,
+        from: from,
+        fromISO: new Date(from).toISOString(),
+        to: to,
+        toISO: new Date(to).toISOString()
+      });
+      
       if (isNaN(from) || isNaN(to)) {
         window.SitSenseUI?.showToast?.('Format tanggal tidak valid', 'error');
         return;
@@ -558,7 +736,9 @@
         window.SitSenseUI?.showToast?.('Rentang maksimal 90 hari. Memuat data terbatas...', 'warn');
       }
 
+      console.log('[SitSense] applyFilters - Fetching sessions with range:', { from, to });
       const sessions = await fetchSessions({ from, to });
+      console.log('[SitSense] applyFilters - Received sessions:', sessions.length);
       STATE.sessions = sessions;
       STATE.page = 1;
       
@@ -600,6 +780,19 @@
     $('#prevPage')?.addEventListener('click', ()=>{ if (STATE.page>1){ STATE.page--; renderTable(STATE.sessions); } });
     $('#nextPage')?.addEventListener('click', ()=>{ const maxPage=Math.ceil(STATE.sessions.length/STATE.pageSize); if (STATE.page<maxPage){ STATE.page++; renderTable(STATE.sessions); } });
     $('#btnExportCSV')?.addEventListener('click', ()=> exportCSV(STATE.sessions));
+    
+    // Listen untuk event session saved untuk auto-refresh
+    window.addEventListener('sitsense:session:saved', (event) => {
+      console.log('[History] Session saved event received, refreshing history...');
+      // Refresh history setelah sesi disimpan
+      setTimeout(() => {
+        try {
+          applyFilters();
+        } catch (e) {
+          console.warn('[History] Failed to refresh after session save:', e);
+        }
+      }, 1000); // Wait 1 second untuk memastikan data sudah tersimpan di Firebase
+    });
   }
 
   // ---------------- Boot ----------------

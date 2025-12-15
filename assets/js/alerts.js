@@ -27,6 +27,8 @@
     carry: 0,             // akumulasi durasi ms dari sesi sebelumnya
     tickId: null,
     thresholds: { soft: 30*60, hard: 60*60, repeatSoftSec: 15*60, repeatHardSec: 30*60 },
+    // Nilai ambang mentah dalam menit (dipakai untuk time scale testing)
+    rawMinutes: { softMin: 30, hardMin: 60, repeatSoftMin: 15, repeatHardMin: 30 },
     lastSoftAt: null,     // detik ketika soft dipicu
     lastHardAt: null,     // detik ketika hard dipicu
     muted: false,
@@ -51,11 +53,30 @@
     if (el) el.textContent = fmt(elapsedSec());
   }
 
+  function toHumanMinFromMinutes(min){
+    const m = Math.round(min);
+    return m >= 60 ? `${Math.floor(m/60)}j${String(m%60).padStart(2,'0')}m` : `${m}m`;
+  }
+
   function updateThresholdLabels(){
     const soft = document.getElementById('softThresholdLabel');
     const hard = document.getElementById('hardThresholdLabel');
-    if (soft) soft.textContent = toHumanMin(state.thresholds.soft);
-    if (hard) hard.textContent = toHumanMin(state.thresholds.hard);
+    // Tampilkan dalam "menit logis" (bukan menit yang sudah di-scale),
+    // sehingga admin bisa melihat 30/60 menit walaupun timeScale > 1.
+    if (soft){
+      if (state.rawMinutes && Number.isFinite(state.rawMinutes.softMin)){
+        soft.textContent = toHumanMinFromMinutes(state.rawMinutes.softMin);
+      } else {
+        soft.textContent = toHumanMin(state.thresholds.soft);
+      }
+    }
+    if (hard){
+      if (state.rawMinutes && Number.isFinite(state.rawMinutes.hardMin)){
+        hard.textContent = toHumanMinFromMinutes(state.rawMinutes.hardMin);
+      } else {
+        hard.textContent = toHumanMin(state.thresholds.hard);
+      }
+    }
   }
   function toHumanMin(sec){
     const m = Math.round(sec/60);
@@ -169,6 +190,41 @@
     updateThresholdLabels();
   }
 
+  // Versi berbasis menit logis + time scale (khusus admin/testing)
+  function setThresholdsFromMinutes({ softMin, hardMin, repeatSoftMin, repeatHardMin }){
+    const scale = window.SitSenseTime && typeof window.SitSenseTime.getScale === 'function'
+      ? window.SitSenseTime.getScale()
+      : 1;
+
+    // Simpan raw untuk label & re-apply saat scale berubah
+    const nextRaw = Object.assign({}, state.rawMinutes);
+    if (Number.isFinite(softMin) && softMin > 0) nextRaw.softMin = softMin;
+    if (Number.isFinite(hardMin) && hardMin > 0) nextRaw.hardMin = hardMin;
+    if (Number.isFinite(repeatSoftMin) && repeatSoftMin > 0) nextRaw.repeatSoftMin = repeatSoftMin;
+    if (Number.isFinite(repeatHardMin) && repeatHardMin > 0) nextRaw.repeatHardMin = repeatHardMin;
+    state.rawMinutes = nextRaw;
+
+    const s = Math.max(0.1, Number(scale) || 1);
+    const softSec = nextRaw.softMin * 60 / s;
+    const hardSec = nextRaw.hardMin * 60 / s;
+    const rSoftSec = nextRaw.repeatSoftMin * 60 / s;
+    const rHardSec = nextRaw.repeatHardMin * 60 / s;
+
+    state.thresholds.soft = Math.floor(softSec);
+    state.thresholds.hard = Math.floor(hardSec);
+    state.thresholds.repeatSoftSec = Math.floor(rSoftSec);
+    state.thresholds.repeatHardSec = Math.floor(rHardSec);
+    if (state.thresholds.hard < state.thresholds.soft) state.thresholds.hard = state.thresholds.soft;
+    updateThresholdLabels();
+  }
+
+  // Re-apply skala ketika admin mengubah timeScale di tengah sesi
+  window.addEventListener('sitsense:timeScaleChanged', function(ev){
+    try{
+      setThresholdsFromMinutes(state.rawMinutes || {});
+    }catch(_){}
+  });
+
   function onThresholdHit(cb){ if (typeof cb === 'function') listeners.add(cb); return ()=>listeners.delete(cb); }
   function setMuted(flag){ state.muted = !!flag; }
 
@@ -190,6 +246,7 @@
     stopSitTimer,
     resetSitTimer,
     setThresholds,
+    setThresholdsFromMinutes,
     getElapsedSeconds: elapsedSec,
     onThresholdHit,
     setMuted,

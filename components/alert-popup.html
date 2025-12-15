@@ -1,0 +1,40 @@
+<!-- components/alert-popup.html -->
+<!--
+  Modal pop-up peringatan dengan 3 level warna:
+  - Kuning (warning-light): peringatan soft
+  - Oranye (warning-medium): peringatan medium
+  - Merah (warning-critical): peringatan hard/critical
+
+  Penggunaan via JavaScript:
+    window.SitSenseUI.showAlertPopup('yellow', 'Judul', 'Pesan', [{text: 'Aksi', action: () => {}}]);
+    window.SitSenseUI.hideAlertPopup();
+-->
+
+<dialog id="alertPopupModal" class="alert-popup-modal">
+  <div class="alert-popup-backdrop"></div>
+  <div class="alert-popup-container alert-popup-yellow">
+    <!-- Header dengan ikon -->
+    <div class="alert-popup-header">
+      <div class="alert-popup-icon-wrapper">
+        <i data-lucide="alert-triangle" class="alert-popup-icon"></i>
+      </div>
+      <button class="alert-popup-close" id="alertPopupClose" aria-label="Tutup">
+        <i data-lucide="x" class="h-5 w-5"></i>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="alert-popup-content">
+      <h3 class="alert-popup-title" id="alertPopupTitle">Peringatan</h3>
+      <p class="alert-popup-message" id="alertPopupMessage">Pesan peringatan akan muncul di sini.</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="alert-popup-actions" id="alertPopupActions">
+      <button class="alert-popup-action-primary" id="alertPopupActionPrimary">
+        Mengerti
+      </button>
+    </div>
+  </div>
+</dialog>
+

@@ -385,6 +385,36 @@
       }
 
       try {
+        // Clear data dari user sebelumnya sebelum login
+        const previousUid = currentUser?.uid;
+        if (previousUid && window.UserContext) {
+          window.UserContext.clearUserData(previousUid);
+        }
+        
+        // Clear semua sitsense localStorage untuk memastikan isolasi data
+        // TAPI jangan hapus preference global seperti sitsense_mode dan sitsense_settings_v1
+        try {
+          const sitsenseKeys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (
+              key.startsWith('sitsense_history_') || 
+              key.startsWith('sitsense_device') ||
+              key === 'sitsense_history_v1' || // Clear key lama (non-user-specific)
+              key === 'sitsense_device' // Clear key lama (non-user-specific)
+            )) {
+              // Jangan hapus preference global
+              if (key !== 'sitsense_mode' && key !== 'sitsense_settings_v1') {
+                sitsenseKeys.push(key);
+              }
+            }
+          }
+          sitsenseKeys.forEach(key => localStorage.removeItem(key));
+          console.log('[Auth] Cleared previous user data before login (preserved preferences):', sitsenseKeys.length, 'keys');
+        } catch (err) {
+          console.warn('[Auth] Failed to clear previous user data:', err);
+        }
+        
         const credential = await auth.signInWithEmailAndPassword(email, password);
         currentUser = credential?.user || null;
         cacheSession(currentUser);
@@ -396,9 +426,65 @@
     },
     async logout() {
       const auth = getAuthInstance();
+      const uid = currentUser?.uid;
+      
+      // Clear user-specific localStorage
+      if (uid) {
+        try {
+          // Clear user-specific data menggunakan UserContext jika tersedia
+          if (window.UserContext && typeof window.UserContext.clearUserData === 'function') {
+            window.UserContext.clearUserData(uid);
+          } else {
+            // Manual cleanup jika UserContext tidak tersedia
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && (key.includes(`_${uid}`) || key.includes(`_${uid}_`))) {
+                keysToRemove.push(key);
+              }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+          }
+          
+          // Clear device ID
+          localStorage.removeItem(`sitsense_device_${uid}`);
+          
+          // Clear history storage untuk user ini
+          const historyStorageKey = `sitsense_history_v1_${uid}`;
+          localStorage.removeItem(historyStorageKey);
+          
+          // Clear base history storage juga (jika ada)
+          localStorage.removeItem('sitsense_history_v1');
+          
+          console.log('[Auth] Cleared user-specific data for user:', uid);
+        } catch (err) {
+          console.warn('[Auth] Failed to clear user data:', err);
+        }
+      }
+      
+      // Clear all sitsense-related localStorage untuk memastikan tidak ada data leakage
+      // TAPI jangan hapus preference global seperti sitsense_mode dan sitsense_settings_v1
+      try {
+        const sitsenseKeys = [];
+        const preserveKeys = ['sitsense_mode', 'sitsense_settings_v1']; // Preference global, jangan dihapus
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sitsense_') && !preserveKeys.includes(key)) {
+            sitsenseKeys.push(key);
+          }
+        }
+        sitsenseKeys.forEach(key => localStorage.removeItem(key));
+        console.log('[Auth] Cleared sitsense-related localStorage (preserved preferences):', sitsenseKeys.length, 'keys');
+      } catch (err) {
+        console.warn('[Auth] Failed to clear sitsense localStorage:', err);
+      }
+      
+      // Clear session cache
       cacheSession(null);
+      cacheProfile(null);
       currentUser = null;
       updateAuthUI(null);
+      
       if (!auth) {
         return { ok: true };
       }
@@ -419,6 +505,36 @@
         provider.setCustomParameters({ prompt: 'select_account' });
       }
       try {
+        // Clear data dari user sebelumnya sebelum login
+        const previousUid = currentUser?.uid;
+        if (previousUid && window.UserContext) {
+          window.UserContext.clearUserData(previousUid);
+        }
+        
+        // Clear semua sitsense localStorage untuk memastikan isolasi data
+        // TAPI jangan hapus preference global seperti sitsense_mode dan sitsense_settings_v1
+        try {
+          const sitsenseKeys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (
+              key.startsWith('sitsense_history_') || 
+              key.startsWith('sitsense_device') ||
+              key === 'sitsense_history_v1' || // Clear key lama (non-user-specific)
+              key === 'sitsense_device' // Clear key lama (non-user-specific)
+            )) {
+              // Jangan hapus preference global
+              if (key !== 'sitsense_mode' && key !== 'sitsense_settings_v1') {
+                sitsenseKeys.push(key);
+              }
+            }
+          }
+          sitsenseKeys.forEach(key => localStorage.removeItem(key));
+          console.log('[Auth] Cleared previous user data before Google login (preserved preferences):', sitsenseKeys.length, 'keys');
+        } catch (err) {
+          console.warn('[Auth] Failed to clear previous user data:', err);
+        }
+        
         const credential = await auth.signInWithPopup(provider);
         currentUser = credential?.user || null;
         cacheSession(currentUser);

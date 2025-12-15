@@ -9,12 +9,13 @@
 (function(){
   const STORAGE_KEY = 'sitsense_settings_v1';
   const DEFAULTS = {
-    theme: 'dark',            // 'dark' | 'light' | 'system'
     lang: 'id-ID',
     notif: true,
     alerts: { softMin: 30, hardMin: 60, repeatSoftMin: 15, repeatHardMin: 30, muted: false },
     tts: { voice: 'id-ID-Standard-A', rate: 1.0, pitch: 0, proxyUrl: '' },
-    ai: { proxyUrl: '', apiKey: '', model: 'gemini-1.5-flash' },
+    ai: { proxyUrl: '', apiKey: '', model: 'gemini-pro' },
+    // Hanya muncul & dipakai di mode admin / developer
+    debug: { timeScale: 1 },
   };
 
   // ---------- Utils ----------
@@ -40,9 +41,6 @@
   }
 
   // ---------- Apply to modules ----------
-  function applyTheme(theme){
-    try { window.SitSenseUI?.setTheme?.(theme); } catch(_) {}
-  }
   function applyNotif(enabled){
     // patch SitSenseUI.showToast jika dimatikan
     if (!window.SitSenseUI) return;
@@ -55,11 +53,27 @@
   }
   function applyAlerts(a){
     const A = window.SitSenseAlerts; if (!A) return;
-    const soft = clamp(Number(a.softMin)||30, 1, 600) * 60;
-    const hard = clamp(Number(a.hardMin)||60, 1, 600) * 60;
-    const rSoft = clamp(Number(a.repeatSoftMin)||15, 1, 600) * 60;
-    const rHard = clamp(Number(a.repeatHardMin)||30, 1, 600) * 60;
-    A.setThresholds({ soft, hard, repeatSoftSec: rSoft, repeatHardSec: rHard });
+    const softMin = clamp(Number(a.softMin)||30, 1, 600);
+    const hardMin = clamp(Number(a.hardMin)||60, 1, 600);
+    const repeatSoftMin = clamp(Number(a.repeatSoftMin)||15, 1, 600);
+    const repeatHardMin = clamp(Number(a.repeatHardMin)||30, 1, 600);
+
+    // Jika modul alerts sudah mendukung time scale, kirim dalam menit logis.
+    if (typeof A.setThresholdsFromMinutes === 'function'){
+      A.setThresholdsFromMinutes({
+        softMin,
+        hardMin,
+        repeatSoftMin,
+        repeatHardMin,
+      });
+    } else {
+      // Fallback lama: kirim detik tanpa time scale
+      const soft = softMin * 60;
+      const hard = hardMin * 60;
+      const rSoft = repeatSoftMin * 60;
+      const rHard = repeatHardMin * 60;
+      A.setThresholds({ soft, hard, repeatSoftSec: rSoft, repeatHardSec: rHard });
+    }
     A.setMuted(!!a.muted);
   }
   function applyTTS(t){
@@ -77,11 +91,17 @@
   }
 
   function applySettings(s){
-    applyTheme(s.theme);
     applyNotif(s.notif);
     applyAlerts(s.alerts);
     applyTTS(s.tts);
     applyAI(s.ai);
+    // Time scale untuk admin/testing (aman diabaikan di mode user)
+    try {
+      if (window.SitSenseTime && typeof window.SitSenseTime.setScale === 'function'){
+        const ts = s.debug && typeof s.debug.timeScale === 'number' ? s.debug.timeScale : 1;
+        window.SitSenseTime.setScale(ts || 1);
+      }
+    } catch(_) {}
     // Language dipakai TTS & AI (opsional)
     try { window.SitSenseTTS?.setConfig?.({ lang: s.lang }); } catch(_) {}
     try { window.SitSenseAI?.setConfig?.({ lang: s.lang }); } catch(_) {}
@@ -90,9 +110,6 @@
   // ---------- UI sync ----------
   function updateUIFromSettings(s){
     // General
-    $('#themeDark')?.toggleAttribute('checked', s.theme==='dark');
-    $('#themeLight')?.toggleAttribute('checked', s.theme==='light');
-    $('#themeSystem')?.toggleAttribute('checked', s.theme==='system');
     const langSel = $('#langSelect'); if (langSel) langSel.value = s.lang;
     const notif = $('#notifToggle'); if (notif) notif.checked = !!s.notif;
 
@@ -113,15 +130,17 @@
     const gpx = $('#geminiProxyInput'); if (gpx) gpx.value = s.ai.proxyUrl || '';
     const gak = $('#geminiApiKeyInput'); if (gak) gak.value = s.ai.apiKey || '';
     const gmd = $('#geminiModelSelect'); if (gmd) gmd.value = s.ai.model;
+
+    // Admin / Developer (time scale)
+    const tsInput = $('#timeScaleInput');
+    const tsLabel = $('#timeScaleValue');
+    const scale = (s.debug && typeof s.debug.timeScale === 'number') ? s.debug.timeScale : 1;
+    if (tsInput) tsInput.value = String(scale);
+    if (tsLabel) tsLabel.textContent = `${scale.toFixed(1)}x`;
   }
 
   // ---------- Bind events ----------
   function bind(){
-    // Theme
-    $('#themeDark')?.addEventListener('click', ()=> applyPick('theme','dark'));
-    $('#themeLight')?.addEventListener('click', ()=> applyPick('theme','light'));
-    $('#themeSystem')?.addEventListener('click', ()=> applyPick('theme','system'));
-
     // General
     $('#langSelect')?.addEventListener('change', (e)=> applyPick('lang', e.target.value));
     $('#notifToggle')?.addEventListener('change', (e)=> applyPick('notif', !!e.target.checked));
@@ -154,6 +173,48 @@
     $('#geminiApiKeyInput')?.addEventListener('change', e=> applyNested('ai','apiKey', e.target.value.trim()));
     $('#geminiModelSelect')?.addEventListener('change', e=> applyNested('ai','model', e.target.value));
     $('#geminiTestBtn')?.addEventListener('click', testGeminiConnection);
+
+    // Admin / Developer
+    $('#timeScaleInput')?.addEventListener('input', e=>{
+      const raw = parseFloat(e.target.value);
+      const val = clamp(Number.isFinite(raw) ? raw : 1, 0.1, 60);
+      applyNested('debug','timeScale', val);
+      try{
+        if (window.SitSenseTime && typeof window.SitSenseTime.setScale === 'function'){
+          window.SitSenseTime.setScale(val);
+        }
+      }catch(_){}
+    });
+
+    // Handler untuk tombol masuk mode admin (yang di panel admin - hidden)
+    $('#enterAdminModeBtn')?.addEventListener('click', ()=>{
+      const ok = window.confirm('Masuk mode admin? Fitur ini hanya untuk testing.\nTime scale dapat membuat timer berjalan sangat cepat.');
+      if (!ok) return;
+      try{
+        localStorage.setItem('sitsense_mode','admin');
+      }catch(_){}
+      window.location.reload();
+    });
+
+    // Handler untuk tombol masuk mode admin (yang selalu terlihat)
+    $('#enterAdminModeBtnPublic')?.addEventListener('click', ()=>{
+      const ok = window.confirm('Masuk mode admin? Fitur ini hanya untuk testing.\nTime scale dapat membuat timer berjalan sangat cepat.');
+      if (!ok) return;
+      try{
+        localStorage.setItem('sitsense_mode','admin');
+      }catch(_){}
+      window.location.reload();
+    });
+
+    // Handler untuk tombol keluar mode admin
+    $('#exitAdminModeBtn')?.addEventListener('click', ()=>{
+      const ok = window.confirm('Keluar dari mode admin? Panel developer akan disembunyikan.');
+      if (!ok) return;
+      try{
+        localStorage.removeItem('sitsense_mode');
+      }catch(_){}
+      window.location.reload();
+    });
 
     // Import/Export/Save/Reset
     $('#exportSettingsBtn')?.addEventListener('click', exportJSON);
@@ -224,6 +285,52 @@
     } catch(_) {}
   }
 
+  // Fungsi untuk menampilkan/sembunyikan panel admin dan update UI mode toggle
+  function toggleAdminPanel(){
+    try{
+      const panel = document.getElementById('adminPanel');
+      const toggleSection = document.getElementById('adminModeToggleSection');
+      const enterBtn = document.getElementById('enterAdminModeBtnPublic');
+      const exitBtn = document.getElementById('exitAdminModeBtn');
+      const statusEl = document.getElementById('adminModeStatus');
+      
+      // Refresh mode detection dulu untuk memastikan membaca localStorage terbaru
+      if (window.SitSenseTime && typeof window.SitSenseTime.refreshMode === 'function'){
+        window.SitSenseTime.refreshMode();
+      }
+      
+      const mode = window.SitSenseTime && typeof window.SitSenseTime.getMode === 'function'
+        ? window.SitSenseTime.getMode()
+        : 'user';
+      
+      // Toggle panel admin (time scale controls)
+      if (panel){
+        if (mode === 'admin'){
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      }
+      
+      // Update UI mode toggle section
+      if (toggleSection && enterBtn && exitBtn && statusEl){
+        if (mode === 'admin'){
+          enterBtn.classList.add('hidden');
+          exitBtn.classList.remove('hidden');
+          statusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 border border-amber-400/40 text-amber-200"><i data-lucide="shield-check" class="h-3 w-3"></i><span>Mode: Admin</span></span>';
+        } else {
+          enterBtn.classList.remove('hidden');
+          exitBtn.classList.add('hidden');
+          statusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-500/10 border border-slate-400/40"><span>Mode: User</span></span>';
+        }
+        // Refresh icons
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }catch(err){
+      console.warn('[SitSense] Failed to toggle admin panel', err);
+    }
+  }
+
   // ---------- Boot ----------
   document.addEventListener('DOMContentLoaded', ()=>{
     try {
@@ -232,6 +339,19 @@
       applySettings(s);
       bind();
       populateVoices();
+
+      // Tampilkan atau sembunyikan panel admin tergantung mode
+      // Retry mechanism untuk memastikan SitSenseTime sudah siap
+      toggleAdminPanel();
+      setTimeout(toggleAdminPanel, 100);
+      setTimeout(toggleAdminPanel, 500);
     } catch(err){ console.warn('[SitSense] settings init error', err); }
+  });
+
+  // Re-check mode saat halaman terlihat (untuk handle navigasi dari sidebar)
+  document.addEventListener('visibilitychange', ()=>{
+    if (!document.hidden){
+      setTimeout(toggleAdminPanel, 100);
+    }
   });
 })();
