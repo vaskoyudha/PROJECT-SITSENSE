@@ -1,0 +1,12 @@
+<svg width="1440" height="960" viewBox="0 0 1440 960" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1440" height="960" fill="#07111A"/>
+    <rect x="48" y="48" width="1344" height="864" rx="28" fill="#0E1822" stroke="#8AC7FF" stroke-opacity="0.16"/>
+    <text x="96" y="150" fill="#7FB5E5" font-family="Arial, sans-serif" font-size="28" letter-spacing="6">IOT MONITORING DASHBOARD</text>
+    <text x="96" y="290" fill="#F4FBFF" font-family="Georgia, serif" font-size="82" font-weight="700">PROJECT-SITSENSE</text>
+    <text x="96" y="390" fill="#D0E4F3" font-family="Arial, sans-serif" font-size="34">Static browser interface for posture tracking, device monitoring, and health-oriented chair telemetry.</text>
+    <rect x="96" y="470" width="540" height="250" rx="18" fill="#122434" stroke="#8AC7FF" stroke-opacity="0.14"/>
+    <rect x="136" y="520" width="210" height="150" rx="14" fill="#18354D"/>
+    <rect x="374" y="520" width="210" height="150" rx="14" fill="#214B6C"/>
+    <rect x="612" y="520" width="210" height="150" rx="14" fill="#29628E" opacity="0.85"/>
+    <text x="96" y="820" fill="#8FB2C8" font-family="Arial, sans-serif" font-size="24">Live preview available • project-sitsense.vercel.app</text>
+</svg>
